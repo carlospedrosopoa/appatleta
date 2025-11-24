@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerar Ícones PWA</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2563eb;
+            margin-bottom: 20px;
+        }
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #1d4ed8;
+        }
+        .preview {
+            margin: 20px 0;
+            text-align: center;
+        }
+        .preview img {
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            margin: 10px;
+        }
+        .info {
+            background: #eff6ff;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #1e40af;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Gerador de Ícones PWA</h1>
+        <p>Clique nos botões abaixo para gerar e baixar os ícones necessários:</p>
+        
+        <div style="text-align: center;">
+            <button onclick="gerarIcone(192)">Gerar Ícone 192x192</button>
+            <button onclick="gerarIcone(512)">Gerar Ícone 512x512</button>
+        </div>
+
+        <div class="preview" id="preview"></div>
+
+        <div class="info">
+            <strong>📝 Instruções:</strong><br>
+            1. Clique em cada botão para gerar e baixar os ícones<br>
+            2. Os arquivos serão salvos como "icon-192x192.png" e "icon-512x512.png"<br>
+            3. Coloque os arquivos na pasta <code>public/</code> do projeto<br>
+            4. Reinicie o servidor para aplicar as mudanças
+        </div>
+    </div>
+
+    <script>
+        function gerarIcone(tamanho) {
+            // Criar canvas
+            const canvas = document.createElement('canvas');
+            canvas.width = tamanho;
+            canvas.height = tamanho;
+            const ctx = canvas.getContext('2d');
+
+            // Fundo azul
+            ctx.fillStyle = '#2563eb';
+            const radius = tamanho * 0.2; // 20% do tamanho para bordas arredondadas
+            ctx.beginPath();
+            ctx.moveTo(radius, 0);
+            ctx.lineTo(tamanho - radius, 0);
+            ctx.quadraticCurveTo(tamanho, 0, tamanho, radius);
+            ctx.lineTo(tamanho, tamanho - radius);
+            ctx.quadraticCurveTo(tamanho, tamanho, tamanho - radius, tamanho);
+            ctx.lineTo(radius, tamanho);
+            ctx.quadraticCurveTo(0, tamanho, 0, tamanho - radius);
+            ctx.lineTo(0, radius);
+            ctx.quadraticCurveTo(0, 0, radius, 0);
+            ctx.closePath();
+            ctx.fill();
+
+            // Letra "A" branca no centro
+            ctx.fillStyle = '#ffffff';
+            ctx.font = `bold ${tamanho * 0.4}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('A', tamanho / 2, tamanho / 2);
+
+            // Converter para blob e fazer download
+            canvas.toBlob(function(blob) {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `icon-${tamanho}x${tamanho}.png`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                // Mostrar preview
+                const preview = document.getElementById('preview');
+                const img = document.createElement('img');
+                img.src = canvas.toDataURL();
+                img.style.width = '150px';
+                img.style.height = '150px';
+                img.alt = `Ícone ${tamanho}x${tamanho}`;
+                
+                // Limpar preview anterior do mesmo tamanho
+                const existing = preview.querySelector(`[data-size="${tamanho}"]`);
+                if (existing) {
+                    existing.remove();
+                }
+                
+                img.setAttribute('data-size', tamanho);
+                preview.appendChild(img);
+            }, 'image/png');
+        }
+
+        // Gerar ambos automaticamente ao carregar (opcional)
+        // window.onload = function() {
+        //     setTimeout(() => gerarIcone(192), 500);
+        //     setTimeout(() => gerarIcone(512), 1000);
+        // };
+    </script>
+</body>
+</html>
+
