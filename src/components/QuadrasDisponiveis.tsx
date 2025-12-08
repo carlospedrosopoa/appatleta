@@ -159,10 +159,25 @@ export default function QuadrasDisponiveis({ onAgendar }: QuadrasDisponiveisProp
   }
 
   // Agrupar quadras por estabelecimento
-  const quadrasPorPoint = points.reduce((acc, point) => {
-    const quadrasDoPoint = quadras.filter((q) => q.pointId === point.id);
+  const quadrasPorPoint = points.reduce((acc, arena) => {
+    const quadrasDoPoint = quadras.filter((q) => q.pointId === arena.id);
     if (quadrasDoPoint.length > 0) {
-      acc[point.id] = {
+      // Converter Arena para Point (usar o point da primeira quadra ou converter)
+      const point: Point = quadrasDoPoint[0]?.point || {
+        id: arena.id,
+        nome: arena.nome,
+        endereco: arena.endereco,
+        telefone: arena.telefone,
+        email: arena.email,
+        descricao: arena.descricao,
+        logoUrl: arena.logoUrl ?? null,
+        latitude: arena.latitude ?? null,
+        longitude: arena.longitude ?? null,
+        ativo: arena.ativo,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      acc[arena.id] = {
         point,
         quadras: quadrasDoPoint,
       };
