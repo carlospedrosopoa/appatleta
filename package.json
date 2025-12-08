@@ -13,6 +13,7 @@
     "@radix-ui/react-label": "^2.1.8",
     "@radix-ui/react-select": "^2.2.6",
     "@radix-ui/react-slot": "^1.2.4",
+    "@google-cloud/storage": "^7.7.0",
     "@types/jsonwebtoken": "^9.0.10",
     "bcryptjs": "^3.0.3",
     "browser-image-compression": "^2.0.2",

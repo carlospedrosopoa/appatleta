@@ -34,7 +34,8 @@ export async function GET(
     const cardBuffer = await obterCardPartida(partidaId, forceRefresh);
 
     // Retornar como imagem PNG
-    return new NextResponse(cardBuffer, {
+    // Converter Buffer para Uint8Array para compatibilidade com NextResponse
+    return new NextResponse(new Uint8Array(cardBuffer), {
       status: 200,
       headers: {
         'Content-Type': 'image/png',
