@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Dialog } from '@headlessui/react';
 import { useAuth } from '@/context/AuthContext';
 import { quadraService, agendamentoService, bloqueioAgendaService, tabelaPrecoService } from '@/services/agendamentoService';
-import { userArenaService, userAtletaService } from '@/services/userAtletaService';
+import { userArenaService, userAtletaService, type Arena } from '@/services/userAtletaService';
 import { api } from '@/lib/api';
 import type { Agendamento, ModoAgendamento } from '@/types/agendamento';
 import { Calendar, Clock, MapPin, AlertCircle, User, Users, UserPlus, X } from 'lucide-react';
@@ -44,7 +44,7 @@ export default function EditarAgendamentoModal({
   const isOrganizer = usuario?.role === 'ORGANIZER';
   const canGerenciarAgendamento = !!(isAdmin || isOrganizer);
 
-  const [points, setPoints] = useState<any[]>([]);
+  const [points, setPoints] = useState<Arena[]>([]);
   const [quadras, setQuadras] = useState<any[]>([]);
   const [atletas, setAtletas] = useState<Atleta[]>([]);
   const [agendamentosExistentes, setAgendamentosExistentes] = useState<Agendamento[]>([]);
@@ -342,10 +342,18 @@ export default function EditarAgendamentoModal({
         isOrganizer ? quadraService.listar() : Promise.resolve([]),
       ]);
 
-      // Filtrar arenas: ADMIN/ORGANIZER vê todas, USER vê apenas assinantes (já vem filtrado do userArenaService)
-      const pointsFiltrados = (isAdmin || isOrganizer)
-        ? pointsData.filter((p: any) => p.ativo)
-        : pointsData; // userArenaService já retorna apenas assinantes e ativas
+      // Filtrar e converter arenas: ADMIN/ORGANIZER vê todas, USER vê apenas assinantes (já vem filtrado do userArenaService)
+      let pointsFiltrados: Arena[];
+      if (isAdmin || isOrganizer) {
+        // Converter Point[] para Arena[] adicionando propriedade assinante
+        pointsFiltrados = (pointsData as any[]).filter((p) => p.ativo).map((p) => ({
+          ...p,
+          assinante: p.assinante ?? true, // Se não tiver assinante, assume true para ADMIN/ORGANIZER
+        })) as Arena[];
+      } else {
+        // userArenaService já retorna Arena[] com assinante
+        pointsFiltrados = pointsData;
+      }
 
       setPoints(pointsFiltrados);
       if (canGerenciarAgendamento) {

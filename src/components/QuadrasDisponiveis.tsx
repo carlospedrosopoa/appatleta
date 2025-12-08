@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { quadraService, tabelaPrecoService } from '@/services/agendamentoService';
 import { userArenaService, userAtletaService, type Arena } from '@/services/userAtletaService';
-import type { Quadra, TabelaPreco } from '@/types/agendamento';
+import type { Quadra, TabelaPreco, Point } from '@/types/agendamento';
 import { MapPin, Calendar, DollarSign, Building2, ArrowRight } from 'lucide-react';
 
 interface QuadrasDisponiveisProps {
@@ -37,10 +37,18 @@ export default function QuadrasDisponiveis({ onAgendar }: QuadrasDisponiveisProp
         ? await (await import('@/services/agendamentoService')).pointService.listar()
         : await userArenaService.listar();
       
-      // Filtrar arenas: ADMIN vê todas, USER vê apenas assinantes (já vem filtrado do userArenaService)
-      const pointsAtivos = isAdmin
-        ? pointsData.filter((p) => p.ativo)
-        : pointsData; // userArenaService já retorna apenas assinantes e ativas
+      // Filtrar e converter arenas: ADMIN vê todas, USER vê apenas assinantes (já vem filtrado do userArenaService)
+      let pointsAtivos: Arena[];
+      if (isAdmin) {
+        // Converter Point[] para Arena[] adicionando propriedade assinante
+        pointsAtivos = (pointsData as any[]).filter((p) => p.ativo).map((p) => ({
+          ...p,
+          assinante: p.assinante ?? true, // Se não tiver assinante, assume true para ADMIN
+        })) as Arena[];
+      } else {
+        // userArenaService já retorna Arena[] com assinante
+        pointsAtivos = pointsData;
+      }
 
       // Carregar todas as quadras ativas
       const todasQuadras: (Quadra & { point: Point; precoMinimo?: number })[] = [];

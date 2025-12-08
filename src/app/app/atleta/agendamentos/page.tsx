@@ -58,10 +58,19 @@ export default function AgendamentosPage() {
         agendamentoService.listar({ apenasMeus: true, incluirPassados: incluirPassados }),
       ]);
       
-      // Filtrar arenas: ADMIN vê todas, USER vê apenas assinantes (já vem filtrado do userArenaService)
-      const pointsFiltrados = isAdmin 
-        ? pointsData.filter((p) => p.ativo)
-        : pointsData; // userArenaService já retorna apenas assinantes e ativas
+      // Filtrar e converter arenas: ADMIN vê todas, USER vê apenas assinantes (já vem filtrado do userArenaService)
+      let pointsFiltrados: Arena[];
+      if (isAdmin) {
+        // Converter Point[] para Arena[] adicionando propriedade assinante
+        // Como ADMIN vê todas, assumimos que todas são assinantes (ou pode ajustar conforme lógica de negócio)
+        pointsFiltrados = (pointsData as any[]).filter((p) => p.ativo).map((p) => ({
+          ...p,
+          assinante: p.assinante ?? true, // Se não tiver assinante, assume true para ADMIN
+        })) as Arena[];
+      } else {
+        // userArenaService já retorna Arena[] com assinante
+        pointsFiltrados = pointsData;
+      }
       
       setPoints(pointsFiltrados);
       setAgendamentos(agendamentosData);
