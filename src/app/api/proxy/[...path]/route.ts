@@ -65,7 +65,15 @@ async function handleProxyRequest(
     // Construir URL da API externa
     const path = pathSegments.join('/');
     const searchParams = request.nextUrl.searchParams.toString();
-    const url = `${API_BASE_URL}/${path}${searchParams ? `?${searchParams}` : ''}`;
+    
+    // Se API_BASE_URL já termina com /api, não adiciona /api novamente
+    // Remove /api do final se existir para evitar duplicação
+    let baseUrl = API_BASE_URL;
+    if (baseUrl.endsWith('/api')) {
+      baseUrl = baseUrl.slice(0, -4); // Remove '/api'
+    }
+    
+    const url = `${baseUrl}/${path}${searchParams ? `?${searchParams}` : ''}`;
 
     // Obter headers da requisição original
     const headers: Record<string, string> = {};

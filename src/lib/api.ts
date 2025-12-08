@@ -1,16 +1,14 @@
 // lib/api.ts - Cliente de API para Next.js (compatível com axios-style)
 // Suporta JWT (preferido) e Basic Auth (fallback)
-// Se NEXT_PUBLIC_API_URL aponta para localhost diferente, usa proxy para evitar CORS
+// Se NEXT_PUBLIC_API_URL aponta para URL externa, usa proxy para evitar CORS
 const getBaseUrl = () => {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
   
-  // Se a URL é externa (não começa com /), verifica se precisa usar proxy
+  // Se a URL é externa (não começa com /), usa proxy para evitar CORS
   if (apiUrl.startsWith('http')) {
-    // Em desenvolvimento, se a URL é localhost mas porta diferente, usa proxy
-    if (typeof window !== 'undefined' && apiUrl.includes('localhost:3000')) {
-      // Frontend roda em 3001, API em 3000 - usa proxy para evitar CORS
-      return '/api/proxy';
-    }
+    // Sempre usa proxy para URLs externas (desenvolvimento ou produção)
+    // O proxy faz a requisição do lado do servidor, evitando problemas de CORS
+    return '/api/proxy';
   }
   
   return apiUrl;
