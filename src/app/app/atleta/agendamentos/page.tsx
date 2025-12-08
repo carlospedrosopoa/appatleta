@@ -69,7 +69,7 @@ export default function AgendamentosPage() {
         })) as Arena[];
       } else {
         // userArenaService já retorna Arena[] com assinante
-        pointsFiltrados = pointsData;
+        pointsFiltrados = pointsData as Arena[];
       }
       
       setPoints(pointsFiltrados);
