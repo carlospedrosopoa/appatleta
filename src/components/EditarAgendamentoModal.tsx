@@ -699,8 +699,19 @@ export default function EditarAgendamentoModal({
             });
 
             if (bloqueioAfetando) {
-              const bloqueioInicio = new Date(bloqueioAfetando.dataHoraInicio);
-              const bloqueioFim = new Date(bloqueioAfetando.dataHoraFim);
+              // Construir data/hora completa do bloqueio combinando dataInicio/dataFim com horaInicio/horaFim
+              const bloqueioDataInicio = new Date(bloqueioAfetando.dataInicio);
+              const bloqueioDataFim = new Date(bloqueioAfetando.dataFim);
+              
+              // Se horaInicio/horaFim existem, usar; senão, usar início/fim do dia
+              const bloqueioHoraInicio = bloqueioAfetando.horaInicio ?? 0;
+              const bloqueioHoraFim = bloqueioAfetando.horaFim ?? 1439; // 23:59 em minutos
+              
+              bloqueioDataInicio.setHours(Math.floor(bloqueioHoraInicio / 60), bloqueioHoraInicio % 60, 0, 0);
+              bloqueioDataFim.setHours(Math.floor(bloqueioHoraFim / 60), bloqueioHoraFim % 60, 59, 999);
+              
+              const bloqueioInicio = bloqueioDataInicio;
+              const bloqueioFim = bloqueioDataFim;
               const solicitadoInicio = new Date(dataHoraInicio);
               const solicitadoFim = new Date(dataHoraFim);
 
