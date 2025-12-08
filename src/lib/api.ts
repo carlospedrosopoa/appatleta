@@ -74,8 +74,10 @@ async function apiRequest(
   }
   
   // Se BASE_URL é proxy, adiciona o endpoint ao path do proxy
+  // Remove a barra inicial do endpoint se existir para evitar duplicação
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
   const url = BASE_URL.startsWith('/api/proxy') 
-    ? `${BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`
+    ? `${BASE_URL}/${cleanEndpoint}`
     : `${BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
   
   const headers: Record<string, string> = {
