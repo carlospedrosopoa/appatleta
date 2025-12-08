@@ -100,10 +100,10 @@ export default function AgendamentosPage() {
       podeEditar = true;
     } else if (usuario?.role === 'USER') {
       // Verificar se o agendamento pertence ao usuário ou ao atleta do usuário
-      podeEditar = agendamento.usuarioId === usuario?.id || 
-                   (agendamento.atletaId && meuPerfilAtleta?.id === agendamento.atletaId);
+      podeEditar = !!(agendamento.usuarioId === usuario?.id || 
+                   (agendamento.atletaId && meuPerfilAtleta?.id === agendamento.atletaId));
     } else {
-      podeEditar = agendamento.usuarioId === usuario?.id;
+      podeEditar = !!(agendamento.usuarioId === usuario?.id);
     }
     
     if (!podeEditar) {
