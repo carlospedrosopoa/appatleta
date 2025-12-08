@@ -47,7 +47,7 @@ export default function QuadrasDisponiveis({ onAgendar }: QuadrasDisponiveisProp
         })) as Arena[];
       } else {
         // userArenaService já retorna Arena[] com assinante
-        pointsAtivos = pointsData;
+        pointsAtivos = pointsData as Arena[];
       }
 
       // Carregar todas as quadras ativas

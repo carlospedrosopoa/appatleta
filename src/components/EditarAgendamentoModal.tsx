@@ -325,7 +325,7 @@ export default function EditarAgendamentoModal({
           ? (await import('@/services/agendamentoService')).pointService.listar()
           : usuario?.role === 'USER' 
             ? userArenaService.listar() // Retorna apenas arenas assinantes e ativas
-            : Promise.resolve([]),
+            : Promise.resolve([] as Arena[]),
         canGerenciarAgendamento
           ? (async () => {
               try {
@@ -351,8 +351,8 @@ export default function EditarAgendamentoModal({
           assinante: p.assinante ?? true, // Se não tiver assinante, assume true para ADMIN/ORGANIZER
         })) as Arena[];
       } else {
-        // userArenaService já retorna Arena[] com assinante
-        pointsFiltrados = pointsData;
+        // userArenaService já retorna Arena[] com assinante, ou Promise.resolve([]) retorna []
+        pointsFiltrados = (pointsData || []) as Arena[];
       }
 
       setPoints(pointsFiltrados);
