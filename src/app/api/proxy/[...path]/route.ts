@@ -4,6 +4,11 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 
+// Debug: log da variável de ambiente (apenas em desenvolvimento)
+if (process.env.NODE_ENV === 'development') {
+  console.log('[PROXY] API_BASE_URL configurada:', API_BASE_URL);
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }

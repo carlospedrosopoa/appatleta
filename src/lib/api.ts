@@ -4,10 +4,18 @@
 const getBaseUrl = () => {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
   
+  // Debug: log da variável de ambiente (apenas em desenvolvimento)
+  if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+    console.log('[API] NEXT_PUBLIC_API_URL:', apiUrl);
+  }
+  
   // Se a URL é externa (não começa com /), usa proxy para evitar CORS
   if (apiUrl.startsWith('http')) {
     // Sempre usa proxy para URLs externas (desenvolvimento ou produção)
     // O proxy faz a requisição do lado do servidor, evitando problemas de CORS
+    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+      console.log('[API] Usando proxy para URL externa:', apiUrl);
+    }
     return '/api/proxy';
   }
   
@@ -15,6 +23,11 @@ const getBaseUrl = () => {
 };
 
 const BASE_URL = getBaseUrl();
+
+// Debug: log da BASE_URL final (apenas em desenvolvimento)
+if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+  console.log('[API] BASE_URL final:', BASE_URL);
+}
 
 let accessToken: string | null = null;
 let basicCreds: { email: string; senha: string } | null = null;
