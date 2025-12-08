@@ -69,6 +69,23 @@ export interface Agendamento {
   // Recorrência
   recorrenciaId?: string | null; // ID que agrupa agendamentos da mesma recorrência
   recorrenciaConfig?: RecorrenciaConfig | null; // Configuração da recorrência
+  // Participantes
+  atletasParticipantes?: Array<{
+    id: string;
+    atletaId: string;
+    atleta: {
+      id: string;
+      nome: string;
+      fone?: string;
+      usuarioId?: string | null;
+      usuario?: {
+        id: string;
+        name: string;
+        email: string;
+      } | null;
+    };
+    createdAt: string;
+  }>;
   createdAt: string;
   updatedAt: string;
 }
@@ -142,6 +159,7 @@ export interface AtualizarAgendamentoPayload {
 }
 
 export interface FiltrosAgendamento {
+  incluirPassados?: boolean;
   quadraId?: string;
   pointId?: string;
   dataInicio?: string;

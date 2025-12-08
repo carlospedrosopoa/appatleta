@@ -34,6 +34,9 @@ export interface Partida {
   gamesTime2: number | null;
   tiebreakTime1?: number | null;
   tiebreakTime2?: number | null;
+  cardUrl?: string | null; // URL do card gerado no Google Cloud Storage (null quando não gerado ou invalidado)
+  cardGeradoEm?: string | null; // Timestamp de quando o card foi gerado/atualizado
+  cardVersao?: number; // Versão do card (incrementa quando regenerado)
 }
 
 

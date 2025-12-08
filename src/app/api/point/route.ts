@@ -5,13 +5,21 @@ import { query } from '@/lib/db';
 // GET /api/point - Listar todos os points
 export async function GET(request: NextRequest) {
   try {
-    const result = await query(
-      `SELECT 
-        id, nome, endereco, telefone, email, descricao, "logoUrl", latitude, longitude, ativo, 
-        "createdAt", "updatedAt"
-      FROM "Point"
-      ORDER BY nome ASC`
-    );
+    const { searchParams } = new URL(request.url);
+    const apenasAtivos = searchParams.get('apenasAtivos') === 'true';
+
+    let sql = `SELECT 
+      id, nome, endereco, telefone, email, descricao, "logoUrl", latitude, longitude, ativo, 
+      "createdAt", "updatedAt"
+    FROM "Point"`;
+
+    if (apenasAtivos) {
+      sql += ` WHERE ativo = true`;
+    }
+
+    sql += ` ORDER BY nome ASC`;
+
+    const result = await query(sql);
     return NextResponse.json(result.rows);
   } catch (error: any) {
     console.error('Erro ao listar points:', error);

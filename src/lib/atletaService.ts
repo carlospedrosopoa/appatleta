@@ -1,6 +1,7 @@
 // lib/atletaService.ts - Serviços de atleta
 import { query } from './db';
 import { v4 as uuidv4 } from 'uuid';
+import { processarFotoPerfil, bufferToBase64 } from './imageService';
 
 function calcularIdade(dataNascimento: Date | string): number {
   const nascimento = new Date(dataNascimento);
@@ -24,9 +25,31 @@ export async function criarAtleta(usuarioId: string, dados: {
   const id = uuidv4();
   const dataNasc = new Date(dados.dataNascimento);
   
+  // Processar foto se fornecida
+  let fotoUrlProcessada = dados.fotoUrl || null;
+  if (dados.fotoUrl) {
+    try {
+      console.log(`[FOTO] Criar atleta - Base64 recebido: ${(dados.fotoUrl.length / 1024).toFixed(2)}KB`);
+      
+      const bufferProcessado = await processarFotoPerfil(dados.fotoUrl);
+      fotoUrlProcessada = bufferToBase64(bufferProcessado);
+      
+      // VALIDAÇÃO CRÍTICA: Se a imagem processada ainda for muito grande, lançar erro
+      if (bufferProcessado.length > 300 * 1024) {
+        console.error(`[FOTO] ERRO: Imagem muito grande após processamento: ${(bufferProcessado.length / 1024).toFixed(2)}KB`);
+        throw new Error(`Imagem muito grande após processamento: ${(bufferProcessado.length / 1024).toFixed(2)}KB. Máximo permitido: 300KB`);
+      }
+      
+      console.log(`[FOTO] Criar atleta - Base64 processado: ${(fotoUrlProcessada.length / 1024).toFixed(2)}KB`);
+    } catch (error: any) {
+      console.error(`[FOTO] ERRO ao criar atleta: ${error.message}`);
+      throw new Error(`Erro ao processar foto: ${error.message || 'Erro desconhecido'}`);
+    }
+  }
+  
   await query(
     'INSERT INTO "Atleta" (id, nome, "dataNascimento", categoria, genero, fone, "fotoUrl", "usuarioId", "pointIdPrincipal", "createdAt") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())',
-    [id, dados.nome, dataNasc, dados.categoria || null, dados.genero || null, dados.fone || null, dados.fotoUrl || null, usuarioId, dados.pointIdPrincipal || null]
+    [id, dados.nome, dataNasc, dados.categoria || null, dados.genero || null, dados.fone || null, fotoUrlProcessada, usuarioId, dados.pointIdPrincipal || null]
   );
   
   // Inserir arenas frequentes
@@ -248,8 +271,30 @@ export async function atualizarAtleta(atletaId: string, dados: {
     valores.push(dados.fone || null);
   }
   if (dados.fotoUrl !== undefined) {
+    // Processar foto ANTES de adicionar aos campos
+    let fotoUrlProcessada = dados.fotoUrl || null;
+    if (dados.fotoUrl) {
+      try {
+        console.log(`[FOTO] Atualizar atleta - Base64 recebido: ${(dados.fotoUrl.length / 1024).toFixed(2)}KB`);
+        
+        const bufferProcessado = await processarFotoPerfil(dados.fotoUrl);
+        fotoUrlProcessada = bufferToBase64(bufferProcessado);
+        
+        // VALIDAÇÃO CRÍTICA: Se a imagem processada ainda for muito grande, lançar erro
+        if (bufferProcessado.length > 300 * 1024) {
+          console.error(`[FOTO] ERRO: Imagem muito grande após processamento: ${(bufferProcessado.length / 1024).toFixed(2)}KB`);
+          throw new Error(`Imagem muito grande após processamento: ${(bufferProcessado.length / 1024).toFixed(2)}KB. Máximo permitido: 300KB`);
+        }
+        
+        console.log(`[FOTO] Atualizar atleta - Base64 processado: ${(fotoUrlProcessada.length / 1024).toFixed(2)}KB`);
+      } catch (error: any) {
+        console.error(`[FOTO] ERRO ao atualizar atleta: ${error.message}`);
+        throw new Error(`Erro ao processar foto: ${error.message || 'Erro desconhecido'}`);
+      }
+    }
+    
     campos.push(`"fotoUrl" = $${paramIndex++}`);
-    valores.push(dados.fotoUrl || null);
+    valores.push(fotoUrlProcessada);
   }
   if (dados.pointIdPrincipal !== undefined) {
     campos.push(`"pointIdPrincipal" = $${paramIndex++}`);

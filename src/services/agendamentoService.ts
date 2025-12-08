@@ -16,9 +16,24 @@ import type {
 } from "@/types/agendamento";
 
 // ========== POINTS ==========
+// ⚠️ DEPRECATED: Para frontend externo, use userArenaService de userAtletaService.ts
+// Este serviço é mantido apenas para compatibilidade com código administrativo
 export const pointService = {
-  listar: async (): Promise<Point[]> => {
-    const res = await api.get("/point");
+  /**
+   * Lista todas as arenas (points) ativas disponíveis.
+   * 
+   * ⚠️ DEPRECATED: Para frontend externo, use userArenaService.listar() de userAtletaService.ts
+   * que usa /api/user/arenas/listar e retorna apenas arenas assinantes e ativas
+   * 
+   * Endpoint: GET /api/point?apenasAtivos=true
+   * Documentação: Seção 2.1 - Sempre use apenasAtivos=true no frontend externo
+   * 
+   * @param apenasAtivos Se true (padrão), retorna apenas arenas ativas
+   * @returns Lista de arenas
+   */
+  listar: async (apenasAtivos: boolean = true): Promise<Point[]> => {
+    const params = apenasAtivos ? '?apenasAtivos=true' : '';
+    const res = await api.get(`/point${params}`);
     return res.data;
   },
 

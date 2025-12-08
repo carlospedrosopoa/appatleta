@@ -1,6 +1,22 @@
 // lib/api.ts - Cliente de API para Next.js (compatível com axios-style)
 // Suporta JWT (preferido) e Basic Auth (fallback)
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
+// Se NEXT_PUBLIC_API_URL aponta para localhost diferente, usa proxy para evitar CORS
+const getBaseUrl = () => {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
+  
+  // Se a URL é externa (não começa com /), verifica se precisa usar proxy
+  if (apiUrl.startsWith('http')) {
+    // Em desenvolvimento, se a URL é localhost mas porta diferente, usa proxy
+    if (typeof window !== 'undefined' && apiUrl.includes('localhost:3000')) {
+      // Frontend roda em 3001, API em 3000 - usa proxy para evitar CORS
+      return '/api/proxy';
+    }
+  }
+  
+  return apiUrl;
+};
+
+const BASE_URL = getBaseUrl();
 
 let accessToken: string | null = null;
 let basicCreds: { email: string; senha: string } | null = null;
@@ -48,7 +64,21 @@ async function apiRequest(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<Response> {
-  const url = endpoint.startsWith('http') ? endpoint : `${BASE_URL}${endpoint}`;
+  // Se endpoint já é URL completa, usa diretamente
+  if (endpoint.startsWith('http')) {
+    return fetch(endpoint, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(options.headers as Record<string, string> || {}),
+      },
+    });
+  }
+  
+  // Se BASE_URL é proxy, adiciona o endpoint ao path do proxy
+  const url = BASE_URL.startsWith('/api/proxy') 
+    ? `${BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`
+    : `${BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
   
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -170,27 +200,73 @@ export const api = {
         body: body ? JSON.stringify(body) : undefined,
         headers: config?.headers,
       });
+      
+      // 204 No Content - não tem body
+      if (response.status === 204) {
+        return { data: null, status: 204, headers: response.headers };
+      }
+      
       const data = await response.json().catch(() => ({}));
+      
+      // Se a resposta não está ok, lança erro (similar ao GET e PUT)
+      if (!response.ok) {
+        const error: any = new Error(data.mensagem || data.error || 'Erro na requisição');
+        error.status = response.status;
+        error.response = { data, status: response.status };
+        error.data = data; // Também adiciona data diretamente para facilitar acesso
+        throw error;
+      }
+      
       return { data, status: response.status, headers: response.headers };
     } catch (error: any) {
       console.error('API POST error:', error);
-      // Retorna um objeto com status de erro para compatibilidade
-      return { 
-        data: { mensagem: error.message || 'Erro ao conectar com o servidor' }, 
-        status: 500, 
-        headers: {} 
-      };
+      // Se já tem status, relança o erro
+      if (error.status) {
+        throw error;
+      }
+      // Caso contrário, cria um erro genérico
+      const apiError: any = new Error(error.message || 'Erro ao conectar com o servidor');
+      apiError.status = 500;
+      apiError.response = { data: { mensagem: error.message || 'Erro ao conectar com o servidor' } };
+      throw apiError;
     }
   },
   
   put: async (endpoint: string, body?: any, config?: any) => {
-    const response = await apiRequest(endpoint, {
-      method: 'PUT',
-      body: body ? JSON.stringify(body) : undefined,
-      headers: config?.headers,
-    });
-    const data = await response.json().catch(() => ({}));
-    return { data, status: response.status, headers: response.headers };
+    try {
+      const response = await apiRequest(endpoint, {
+        method: 'PUT',
+        body: body ? JSON.stringify(body) : undefined,
+        headers: config?.headers,
+      });
+      
+      // 204 No Content - não tem body
+      if (response.status === 204) {
+        return { data: null, status: 204, headers: response.headers };
+      }
+      
+      const data = await response.json().catch(() => ({}));
+      
+      // Se a resposta não está ok, lança erro
+      if (!response.ok) {
+        const error: any = new Error(data.mensagem || data.error || 'Erro na requisição');
+        error.status = response.status;
+        error.data = data;
+        throw error;
+      }
+      
+      return { data, status: response.status, headers: response.headers };
+    } catch (error: any) {
+      console.error('API PUT error:', error);
+      // Se já tem status, relança o erro
+      if (error.status) {
+        throw error;
+      }
+      // Caso contrário, cria um erro genérico
+      const apiError: any = new Error(error.message || 'Erro ao conectar com o servidor');
+      apiError.status = 500;
+      throw apiError;
+    }
   },
   
   delete: async (endpoint: string, config?: any) => {

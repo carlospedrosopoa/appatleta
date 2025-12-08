@@ -1,6 +1,7 @@
 // lib/partidaService.ts - Serviços de partida
 import { query } from './db';
 import { v4 as uuidv4 } from 'uuid';
+import { invalidarCardPartida } from './cardService';
 
 export async function criarPartida(dados: {
   data: string;
@@ -58,6 +59,8 @@ export async function criarPartida(dados: {
     [partidaId]
   );
   
+  // Incluir cardUrl, cardGeradoEm, cardVersao se existirem na tabela
+  
   const partida = result.rows[0];
   
   return {
@@ -85,6 +88,8 @@ export async function listarPartidas() {
     []
   );
   
+  // cardUrl, cardGeradoEm, cardVersao já vêm no SELECT p.*
+  
   const partidas = result.rows.map((row: any) => ({
     ...row,
     atleta1: row.atleta1Nome ? { id: row.atleta1Id, nome: row.atleta1Nome } : null,
@@ -102,9 +107,22 @@ export async function atualizarPlacar(partidaId: string, placar: {
   tiebreakTime1?: number | null;
   tiebreakTime2?: number | null;
 }) {
+  // Invalidar card antes de atualizar (deleta arquivo antigo do GCS se existir)
+  try {
+    await invalidarCardPartida(partidaId);
+  } catch (error) {
+    // Não falhar se houver erro ao invalidar card (pode não ter card ainda)
+    console.warn('Erro ao invalidar card ao atualizar placar:', error);
+  }
+  
+  // Atualizar placar (cardUrl já foi invalidado pela função acima)
   await query(
     `UPDATE "Partida" 
-     SET "gamesTime1" = $1, "gamesTime2" = $2, "tiebreakTime1" = $3, "tiebreakTime2" = $4
+     SET "gamesTime1" = $1, 
+         "gamesTime2" = $2, 
+         "tiebreakTime1" = $3, 
+         "tiebreakTime2" = $4,
+         "updatedAt" = NOW()
      WHERE id = $5`,
     [
       placar.gamesTime1,

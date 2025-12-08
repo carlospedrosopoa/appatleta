@@ -3,9 +3,11 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { pointService, quadraService, tabelaPrecoService } from '@/services/agendamentoService';
-import type { Point, Quadra, TabelaPreco } from '@/types/agendamento';
-import { MapPin, Calendar, Clock, DollarSign, Building2, ArrowRight } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { quadraService, tabelaPrecoService } from '@/services/agendamentoService';
+import { userArenaService, userAtletaService, type Arena } from '@/services/userAtletaService';
+import type { Quadra, TabelaPreco } from '@/types/agendamento';
+import { MapPin, Calendar, DollarSign, Building2, ArrowRight } from 'lucide-react';
 
 interface QuadrasDisponiveisProps {
   onAgendar?: (quadraId: string) => void;
@@ -13,7 +15,9 @@ interface QuadrasDisponiveisProps {
 
 export default function QuadrasDisponiveis({ onAgendar }: QuadrasDisponiveisProps) {
   const router = useRouter();
-  const [points, setPoints] = useState<Point[]>([]);
+  const { usuario } = useAuth();
+  const isAdmin = usuario?.role === 'ADMIN';
+  const [points, setPoints] = useState<Arena[]>([]);
   const [quadras, setQuadras] = useState<(Quadra & { point: Point; precoMinimo?: number })[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
@@ -27,9 +31,16 @@ export default function QuadrasDisponiveis({ onAgendar }: QuadrasDisponiveisProp
       setCarregando(true);
       setErro('');
 
-      // Carregar todos os estabelecimentos ativos
-      const pointsData = await pointService.listar();
-      const pointsAtivos = pointsData.filter((p) => p.ativo);
+      // Para frontend externo, sempre usa userArenaService que retorna apenas arenas assinantes e ativas
+      // Se for ADMIN, pode usar pointService.listar() para ver todas, mas no frontend externo geralmente não é ADMIN
+      const pointsData = isAdmin 
+        ? await (await import('@/services/agendamentoService')).pointService.listar()
+        : await userArenaService.listar();
+      
+      // Filtrar arenas: ADMIN vê todas, USER vê apenas assinantes (já vem filtrado do userArenaService)
+      const pointsAtivos = isAdmin
+        ? pointsData.filter((p) => p.ativo)
+        : pointsData; // userArenaService já retorna apenas assinantes e ativas
 
       // Carregar todas as quadras ativas
       const todasQuadras: (Quadra & { point: Point; precoMinimo?: number })[] = [];
@@ -91,9 +102,6 @@ export default function QuadrasDisponiveis({ onAgendar }: QuadrasDisponiveisProp
     }
   };
 
-  const handleVerAgenda = (quadraId: string) => {
-    router.push(`/app/atleta/agendamentos/agenda?quadraId=${quadraId}`);
-  };
 
   if (carregando) {
     return (
@@ -227,17 +235,10 @@ export default function QuadrasDisponiveis({ onAgendar }: QuadrasDisponiveisProp
                     <div className="flex gap-2 mt-3">
                       <button
                         onClick={() => handleAgendar(quadra.id)}
-                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                        className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors font-medium"
                       >
                         <Calendar className="w-4 h-4" />
                         Agendar
-                      </button>
-                      <button
-                        onClick={() => handleVerAgenda(quadra.id)}
-                        className="flex items-center justify-center gap-2 px-3 py-2 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300 transition-colors font-medium"
-                        title="Ver agenda semanal"
-                      >
-                        <Clock className="w-4 h-4" />
                       </button>
                     </div>
                   </div>

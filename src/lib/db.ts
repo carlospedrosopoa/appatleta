@@ -26,9 +26,11 @@ export async function query(text: string, params?: any[]) {
     // O timezone UTC já está configurado no Pool via options
     const res = await pool.query(text, params);
     const duration = Date.now() - start;
-    if (process.env.NODE_ENV === "development") {
-      console.log("Executed query", { text, duration, rows: res.rowCount });
-    }
+    
+    // Logs de queries DESABILITADOS por padrão
+    // Para habilitar, defina LOG_QUERIES=true no .env.local
+    // REMOVIDO: console.log("Executed query", ...) para limpar terminal
+    
     return res;
   } catch (error) {
     console.error("Database query error:", error);

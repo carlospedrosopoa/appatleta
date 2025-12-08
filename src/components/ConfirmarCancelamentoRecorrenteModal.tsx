@@ -1,15 +1,15 @@
-// components/ConfirmarCancelamentoRecorrenteModal.tsx - Modal para confirmar cancelamento de agendamento recorrente
+// components/ConfirmarCancelamentoRecorrenteModal.tsx - Modal para confirmar cancelamento de agendamento
 'use client';
 
 import { Dialog } from '@headlessui/react';
-import { AlertTriangle, Calendar, Repeat } from 'lucide-react';
+import { AlertTriangle, Calendar } from 'lucide-react';
 import type { Agendamento } from '@/types/agendamento';
 
 interface ConfirmarCancelamentoRecorrenteModalProps {
   isOpen: boolean;
   agendamento: Agendamento | null;
   onClose: () => void;
-  onConfirmar: (aplicarARecorrencia: boolean) => void;
+  onConfirmar: () => void;
 }
 
 export default function ConfirmarCancelamentoRecorrenteModal({
@@ -21,7 +21,6 @@ export default function ConfirmarCancelamentoRecorrenteModal({
   if (!agendamento) return null;
 
   const dataHora = new Date(agendamento.dataHora);
-  const temRecorrencia = !!agendamento.recorrenciaId;
 
   return (
     <Dialog open={isOpen} onClose={onClose} className="relative z-50">
@@ -67,56 +66,20 @@ export default function ConfirmarCancelamentoRecorrenteModal({
             )}
           </div>
 
-          {temRecorrencia && (
-            <div className="mb-6 p-4 bg-purple-50 rounded-lg border border-purple-200">
-              <div className="flex items-center gap-2 mb-3">
-                <Repeat className="w-4 h-4 text-purple-600" />
-                <span className="text-sm font-medium text-purple-900">
-                  Este é um agendamento recorrente
-                </span>
-              </div>
-              <p className="text-sm text-purple-700 mb-4">
-                Você pode cancelar apenas este agendamento ou todos os agendamentos futuros desta recorrência.
-              </p>
-              <div className="space-y-3">
-                <button
-                  onClick={() => onConfirmar(false)}
-                  className="w-full px-4 py-3 bg-white border-2 border-purple-300 text-purple-700 rounded-lg hover:bg-purple-50 transition-colors text-sm font-medium text-left"
-                >
-                  <div className="font-semibold mb-1">Cancelar apenas este agendamento</div>
-                  <div className="text-xs text-purple-600">
-                    Os próximos agendamentos da recorrência continuarão ativos
-                  </div>
-                </button>
-                <button
-                  onClick={() => onConfirmar(true)}
-                  className="w-full px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium text-left"
-                >
-                  <div className="font-semibold mb-1">Cancelar este e todos os futuros</div>
-                  <div className="text-xs text-red-100">
-                    Todos os agendamentos futuros desta recorrência serão cancelados
-                  </div>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {!temRecorrencia && (
-            <div className="flex flex-col sm:flex-row gap-3 justify-end">
-              <button
-                onClick={onClose}
-                className="w-full sm:w-auto px-6 py-3 bg-gray-200 rounded-lg hover:bg-gray-300 text-gray-800 font-medium transition-colors"
-              >
-                Não, manter agendamento
-              </button>
-              <button
-                onClick={() => onConfirmar(false)}
-                className="w-full sm:w-auto px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 font-semibold transition-colors"
-              >
-                Sim, cancelar
-              </button>
-            </div>
-          )}
+          <div className="flex flex-col sm:flex-row gap-3 justify-end">
+            <button
+              onClick={onClose}
+              className="w-full sm:w-auto px-6 py-3 bg-gray-200 rounded-lg hover:bg-gray-300 text-gray-800 font-medium transition-colors"
+            >
+              Não, manter agendamento
+            </button>
+            <button
+              onClick={onConfirmar}
+              className="w-full sm:w-auto px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 font-semibold transition-colors"
+            >
+              Sim, cancelar
+            </button>
+          </div>
         </Dialog.Panel>
       </div>
     </Dialog>

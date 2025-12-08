@@ -26,7 +26,7 @@ export default function PreencherPerfilAtletaPage() {
     categoria: '',
   });
 
-  const [points, setPoints] = useState<Point[]>([]);
+  const [points, setPoints] = useState<Arena[]>([]);
   const [pointIdPrincipal, setPointIdPrincipal] = useState<string>('');
   const [pointIdsFrequentes, setPointIdsFrequentes] = useState<string[]>([]);
   const [fotoPreview, setFotoPreview] = useState<string | null>(null);
@@ -44,8 +44,9 @@ export default function PreencherPerfilAtletaPage() {
 
     const carregarArenas = async () => {
       try {
-        const data = await pointService.listar();
-        setPoints(data.filter((p) => p.ativo));
+        // Usa o serviço específico para frontend externo (já retorna apenas arenas assinantes e ativas)
+        const data = await userArenaService.listar();
+        setPoints(data);
       } catch (error) {
         console.error('Erro ao carregar arenas:', error);
       } finally {
@@ -55,8 +56,8 @@ export default function PreencherPerfilAtletaPage() {
 
     const verificarAtleta = async () => {
       try {
-        const res = await api.get('/atleta/me/atleta');
-        if (res.status === 200 && res.data) {
+        const atleta = await userAtletaService.obter();
+        if (atleta) {
           // Já tem atleta, redireciona
           router.push('/dashboard');
           return;
@@ -78,34 +79,25 @@ export default function PreencherPerfilAtletaPage() {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Validar tipo de arquivo
-      if (!file.type.startsWith('image/')) {
-        setErro('Por favor, selecione apenas arquivos de imagem.');
-        return;
-      }
+      setErro('');
 
-      // Validar tamanho (máximo 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        setErro('A imagem deve ter no máximo 5MB.');
-        return;
-      }
-
-      // Converter para base64
-      // TODO: Migrar para URL (Vercel Blob Storage ou Cloudinary) quando necessário para melhor performance
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        setFotoUrl(base64String);
-        setFotoPreview(base64String);
+      try {
+        // Processar imagem: redimensionar e comprimir
+        const { processarFotoPerfil } = await import('@/lib/imageUtils');
+        const fotoProcessada = await processarFotoPerfil(file);
+        
+        setFotoUrl(fotoProcessada);
+        setFotoPreview(fotoProcessada);
         setErro('');
-      };
-      reader.onerror = () => {
-        setErro('Erro ao ler a imagem. Tente novamente.');
-      };
-      reader.readAsDataURL(file);
+      } catch (error: any) {
+        console.error('Erro ao processar foto:', error);
+        setErro(error.message || 'Erro ao processar imagem. Tente novamente.');
+        setFotoUrl(null);
+        setFotoPreview(null);
+      }
     }
   };
 
@@ -143,15 +135,11 @@ export default function PreencherPerfilAtletaPage() {
     };
 
     try {
-      const { status } = await api.post('/atleta/criarAtleta', payload);
-      if (status === 201 || status === 200) {
-        router.push('/dashboard');
-      } else {
-        setErro('Erro ao salvar perfil. Tente novamente.');
-      }
-    } catch (error) {
+      await userAtletaService.criar(payload);
+      router.push('/dashboard');
+    } catch (error: any) {
       console.error('Erro ao criar atleta:', error);
-      setErro('Erro ao salvar perfil. Tente novamente.');
+      setErro(error?.response?.data?.mensagem || error?.message || 'Erro ao salvar perfil. Tente novamente.');
     }
   };
 

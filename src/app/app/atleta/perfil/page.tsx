@@ -19,34 +19,28 @@ function ModalEditarFoto({ isOpen, atletaId, fotoAtual, onClose, onSuccess }: Mo
   const [erro, setErro] = useState('');
   const [salvando, setSalvando] = useState(false);
 
-  const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Validar tipo de arquivo
-      if (!file.type.startsWith('image/')) {
-        setErro('Por favor, selecione apenas arquivos de imagem.');
-        return;
-      }
+      setErro('');
+      setSalvando(true); // Mostrar loading durante processamento
 
-      // Validar tamanho (máximo 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        setErro('A imagem deve ter no máximo 5MB.');
-        return;
-      }
-
-      // Converter para base64
-      // TODO: Migrar para URL (Vercel Blob Storage ou Cloudinary) quando necessário para melhor performance
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        setFotoUrl(base64String);
-        setFotoPreview(base64String);
+      try {
+        // Processar imagem: redimensionar e comprimir
+        const { processarFotoPerfil } = await import('@/lib/imageUtils');
+        const fotoProcessada = await processarFotoPerfil(file);
+        
+        setFotoUrl(fotoProcessada);
+        setFotoPreview(fotoProcessada);
         setErro('');
-      };
-      reader.onerror = () => {
-        setErro('Erro ao ler a imagem. Tente novamente.');
-      };
-      reader.readAsDataURL(file);
+      } catch (error: any) {
+        console.error('Erro ao processar foto:', error);
+        setErro(error.message || 'Erro ao processar imagem. Tente novamente.');
+        setFotoUrl(null);
+        setFotoPreview(null);
+      } finally {
+        setSalvando(false);
+      }
     }
   };
 

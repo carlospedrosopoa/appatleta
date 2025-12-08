@@ -4,11 +4,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Dialog } from '@headlessui/react';
 import { useAuth } from '@/context/AuthContext';
-import { pointService, quadraService, agendamentoService, bloqueioAgendaService } from '@/services/agendamentoService';
+import { quadraService, agendamentoService, bloqueioAgendaService, tabelaPrecoService } from '@/services/agendamentoService';
+import { userArenaService, userAtletaService } from '@/services/userAtletaService';
 import { api } from '@/lib/api';
 import type { Agendamento, ModoAgendamento } from '@/types/agendamento';
-import { Calendar, Clock, MapPin, AlertCircle, User, Users, UserPlus, Repeat } from 'lucide-react';
-import type { RecorrenciaConfig, TipoRecorrencia } from '@/types/agendamento';
+import { Calendar, Clock, MapPin, AlertCircle, User, Users, UserPlus, X } from 'lucide-react';
 
 interface Atleta {
   id: string;
@@ -22,6 +22,10 @@ interface EditarAgendamentoModalProps {
   onClose: () => void;
   onSuccess: () => void;
   quadraIdInicial?: string; // Para pré-selecionar uma quadra ao criar novo agendamento
+  dataInicial?: string; // Data pré-preenchida para novo agendamento
+  horaInicial?: string; // Hora pré-preenchida para novo agendamento
+  duracaoInicial?: number; // Duração pré-preenchida para novo agendamento
+  onCancelarAgendamento?: (agendamento: Agendamento) => void; // Callback para cancelar agendamento
 }
 
 export default function EditarAgendamentoModal({
@@ -30,6 +34,10 @@ export default function EditarAgendamentoModal({
   onClose,
   onSuccess,
   quadraIdInicial,
+  dataInicial,
+  horaInicial,
+  duracaoInicial,
+  onCancelarAgendamento,
 }: EditarAgendamentoModalProps) {
   const { usuario } = useAuth();
   const isAdmin = usuario?.role === 'ADMIN';
@@ -44,6 +52,16 @@ export default function EditarAgendamentoModal({
   const [carregandoAtletas, setCarregandoAtletas] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState('');
+  const [disponibilidade, setDisponibilidade] = useState<Array<{
+    point: any;
+    quadras: Array<{
+      quadra: any;
+      disponivel: boolean;
+      motivo?: string;
+    }>;
+  }>>([]);
+  const [carregandoDisponibilidade, setCarregandoDisponibilidade] = useState(false);
+  const [meuPerfilAtleta, setMeuPerfilAtleta] = useState<any>(null);
 
   // Modo de agendamento (apenas para admin)
   const [modo, setModo] = useState<ModoAgendamento>('normal');
@@ -57,6 +75,11 @@ export default function EditarAgendamentoModal({
   const [observacoes, setObservacoes] = useState('');
   const [valorHora, setValorHora] = useState<number | null>(null);
   const [valorCalculado, setValorCalculado] = useState<number | null>(null);
+
+  // Log quando valores mudam
+  useEffect(() => {
+    console.log('Valores atualizados:', { valorHora, valorCalculado });
+  }, [valorHora, valorCalculado]);
   const [valorNegociado, setValorNegociado] = useState<string>('');
 
   // Campos específicos por modo
@@ -64,17 +87,12 @@ export default function EditarAgendamentoModal({
   const [nomeAvulso, setNomeAvulso] = useState('');
   const [telefoneAvulso, setTelefoneAvulso] = useState('');
   const [buscaAtleta, setBuscaAtleta] = useState('');
+  
+  // Atletas participantes
+  const [atletasParticipantes, setAtletasParticipantes] = useState<Array<{ id: string; nome: string; telefone: string }>>([]);
+  const [telefoneNovoParticipante, setTelefoneNovoParticipante] = useState('');
+  const [buscandoAtleta, setBuscandoAtleta] = useState(false);
 
-  // Campos de recorrência
-  const [temRecorrencia, setTemRecorrencia] = useState(false);
-  const [tipoRecorrencia, setTipoRecorrencia] = useState<TipoRecorrencia>(null);
-  const [intervaloRecorrencia, setIntervaloRecorrencia] = useState(1);
-  const [diasSemanaRecorrencia, setDiasSemanaRecorrencia] = useState<number[]>([]);
-  const [diaMesRecorrencia, setDiaMesRecorrencia] = useState<number>(1);
-  const [dataFimRecorrencia, setDataFimRecorrencia] = useState('');
-  const [quantidadeOcorrencias, setQuantidadeOcorrencias] = useState<number>(12);
-  const [aplicarARecorrencia, setAplicarARecorrencia] = useState(false); // Para agendamentos recorrentes: aplicar apenas neste ou em todos os futuros
-  const [agendamentoJaRecorrente, setAgendamentoJaRecorrente] = useState(false); // Indica se o agendamento já é recorrente
 
   useEffect(() => {
     if (isOpen) {
@@ -93,7 +111,7 @@ export default function EditarAgendamentoModal({
         }
       }
     }
-  }, [isOpen, agendamento, quadraIdInicial]);
+  }, [isOpen, agendamento, quadraIdInicial, dataInicial, horaInicial, duracaoInicial]);
 
   useEffect(() => {
     if (pointId && !isOrganizer) {
@@ -101,11 +119,101 @@ export default function EditarAgendamentoModal({
     }
   }, [pointId]);
 
+  const carregarValoresQuadra = async (quadraIdParam?: string, dataParam?: string, horaParam?: string, duracaoParam?: number) => {
+    // Usar parâmetros se fornecidos, senão usar os estados
+    const quadraIdParaUsar = quadraIdParam || quadraId;
+    const dataParaUsar = dataParam || data;
+    const horaParaUsar = horaParam || hora;
+    const duracaoParaUsar = duracaoParam || duracao;
+
+    console.log('carregarValoresQuadra chamado com:', { quadraIdParaUsar, dataParaUsar, horaParaUsar, duracaoParaUsar });
+
+    if (!quadraIdParaUsar || !dataParaUsar || !horaParaUsar || !duracaoParaUsar) {
+      console.log('carregarValoresQuadra: faltando parâmetros');
+      return;
+    }
+
+    try {
+      // Buscar tabela de preços da quadra
+      const tabelasPreco = await tabelaPrecoService.listar(quadraIdParaUsar);
+      console.log('Tabelas de preço encontradas:', tabelasPreco);
+      const tabelasAtivas = tabelasPreco.filter((tp) => tp.ativo && tp.inicioMinutoDia != null && tp.fimMinutoDia != null);
+      console.log('Tabelas ativas:', tabelasAtivas);
+
+      if (tabelasAtivas.length === 0) {
+        console.log('Nenhuma tabela ativa encontrada');
+        setValorHora(null);
+        setValorCalculado(null);
+        return;
+      }
+
+      // Converter hora para minutos (ex: "14:30" -> 870 minutos)
+      const [horaStr, minutoStr] = horaParaUsar.split(':');
+      const minutosHora = parseInt(horaStr) * 60 + parseInt(minutoStr);
+      console.log('Minutos da hora selecionada:', minutosHora);
+
+      // Encontrar a tabela de preço que se aplica a este horário
+      const tabelaAplicavel = tabelasAtivas.find((tp) => {
+        if (tp.inicioMinutoDia == null || tp.fimMinutoDia == null) return false;
+        
+        const minutosInicio = tp.inicioMinutoDia;
+        const minutosFim = tp.fimMinutoDia;
+
+        const aplicavel = minutosHora >= minutosInicio && minutosHora < minutosFim;
+        console.log(`Verificando tabela ${minutosInicio}-${minutosFim}: aplicável: ${aplicavel}`);
+        return aplicavel;
+      });
+
+      if (tabelaAplicavel && tabelaAplicavel.valorHora != null) {
+        const valorHoraCalculado = tabelaAplicavel.valorHora;
+        const valorTotalCalculado = (valorHoraCalculado * duracaoParaUsar) / 60;
+
+        console.log('Valores calculados (tabela aplicável):', { valorHoraCalculado, valorTotalCalculado, duracaoParaUsar });
+        setValorHora(valorHoraCalculado);
+        setValorCalculado(valorTotalCalculado);
+      } else {
+        // Se não encontrar tabela específica, usar a primeira ativa com valorHora válido
+        const primeiraTabela = tabelasAtivas.find((tp) => tp.valorHora != null);
+        if (primeiraTabela && primeiraTabela.valorHora != null) {
+          const valorHoraCalculado = primeiraTabela.valorHora;
+          const valorTotalCalculado = (valorHoraCalculado * duracaoParaUsar) / 60;
+
+          console.log('Valores calculados (primeira tabela):', { valorHoraCalculado, valorTotalCalculado, duracaoParaUsar });
+          setValorHora(valorHoraCalculado);
+          setValorCalculado(valorTotalCalculado);
+        } else {
+          console.log('Nenhuma tabela válida encontrada');
+          setValorHora(null);
+          setValorCalculado(null);
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao carregar valores da quadra:', error);
+      setValorHora(null);
+      setValorCalculado(null);
+    }
+  };
+
   useEffect(() => {
     if (quadraId && data) {
       verificarDisponibilidade();
     }
   }, [quadraId, data]);
+
+  useEffect(() => {
+    console.log('useEffect valores - quadraId, data, hora, duracao mudaram:', { quadraId, data, hora, duracao });
+    if (quadraId && data && hora && duracao) {
+      console.log('Chamando carregarValoresQuadra do useEffect');
+      carregarValoresQuadra(quadraId, data, hora, duracao);
+    }
+  }, [quadraId, data, hora, duracao]);
+
+  // Verificar disponibilidade de todas as quadras quando for novo agendamento com data/hora/duração
+  useEffect(() => {
+    if (!agendamento && data && hora && duracao && points.length > 0) {
+      verificarDisponibilidadeGeral();
+    }
+  }, [data, hora, duracao, points, agendamento]);
 
   useEffect(() => {
     if (modo === 'normal') {
@@ -130,11 +238,94 @@ export default function EditarAgendamentoModal({
     });
   }, [atletas, buscaAtleta]);
 
+  const adicionarParticipantePorTelefone = async () => {
+    if (!telefoneNovoParticipante.trim()) {
+      setErro('Por favor, informe o telefone do atleta');
+      return;
+    }
+
+    try {
+      setBuscandoAtleta(true);
+      setErro('');
+      
+      const resultado = await userAtletaService.buscarPorTelefone(telefoneNovoParticipante);
+
+      // Verificar se já está na lista
+      if (atletasParticipantes.some((p) => p.id === resultado.id)) {
+        setErro('Este atleta já está na lista de participantes');
+        setTelefoneNovoParticipante('');
+        return;
+      }
+
+      // Adicionar à lista
+      setAtletasParticipantes((prev) => [
+        ...prev,
+        {
+          id: resultado.id,
+          nome: resultado.nome,
+          telefone: resultado.telefone,
+        },
+      ]);
+
+      // Limpar campo
+      setTelefoneNovoParticipante('');
+    } catch (error: any) {
+      console.error('Erro ao buscar atleta:', error);
+      // Se for erro 404, mostrar mensagem específica
+      const status = error?.status || error?.response?.status;
+      
+      // Tentar obter a mensagem de diferentes lugares onde pode estar
+      let mensagem = '';
+      if (error?.response?.data?.mensagem) {
+        mensagem = error.response.data.mensagem;
+      } else if (error?.message) {
+        mensagem = error.message;
+      } else if (error?.data?.mensagem) {
+        mensagem = error.data.mensagem;
+      } else {
+        mensagem = 'Erro ao buscar atleta. Verifique o telefone e tente novamente.';
+      }
+      
+      // Se for erro 404 e a mensagem não mencionar "cadastrado", usar mensagem padrão
+      if (status === 404 && !mensagem.toLowerCase().includes('cadastrado')) {
+        mensagem = 'Este número não está cadastrado como usuário do app';
+      }
+      
+      // Debug: verificar estrutura do erro
+      console.log('Status do erro:', status);
+      console.log('Mensagem extraída:', mensagem);
+      console.log('Estrutura completa do erro:', error);
+      
+      setErro(mensagem);
+    } finally {
+      setBuscandoAtleta(false);
+    }
+  };
+
+  const removerParticipante = (atletaId: string) => {
+    setAtletasParticipantes((prev) => prev.filter((p) => p.id !== atletaId));
+  };
+
   const carregarDados = async () => {
     try {
+      // Se for USER e não for edição, carregar perfil de atleta apenas para exibição
+      if (usuario?.role === 'USER' && !agendamento) {
+        try {
+          const perfilAtleta = await userAtletaService.obter();
+          setMeuPerfilAtleta(perfilAtleta);
+        } catch (error) {
+          console.error('Erro ao carregar perfil de atleta:', error);
+          // Se não tiver perfil, continua normalmente (a API vai validar)
+        }
+      }
+
       const [pointsData, atletasData, quadrasData] = await Promise.all([
-        // USER e ADMIN podem ver todos os points
-        (isAdmin || usuario?.role === 'USER') ? pointService.listar() : Promise.resolve([]),
+        // ADMIN e ORGANIZER podem ver todos os points, USER apenas assinantes (via userArenaService)
+        (isAdmin || isOrganizer) 
+          ? (await import('@/services/agendamentoService')).pointService.listar()
+          : usuario?.role === 'USER' 
+            ? userArenaService.listar() // Retorna apenas arenas assinantes e ativas
+            : Promise.resolve([]),
         canGerenciarAgendamento
           ? (async () => {
               try {
@@ -151,7 +342,12 @@ export default function EditarAgendamentoModal({
         isOrganizer ? quadraService.listar() : Promise.resolve([]),
       ]);
 
-      setPoints(pointsData.filter((p: any) => p.ativo));
+      // Filtrar arenas: ADMIN/ORGANIZER vê todas, USER vê apenas assinantes (já vem filtrado do userArenaService)
+      const pointsFiltrados = (isAdmin || isOrganizer)
+        ? pointsData.filter((p: any) => p.ativo)
+        : pointsData; // userArenaService já retorna apenas assinantes e ativas
+
+      setPoints(pointsFiltrados);
       if (canGerenciarAgendamento) {
         setCarregandoAtletas(true);
         setAtletas(atletasData as Atleta[]);
@@ -161,6 +357,7 @@ export default function EditarAgendamentoModal({
       if (isOrganizer && quadrasData.length > 0) {
         setQuadras((quadrasData as any[]).filter((q: any) => q.ativo));
       }
+
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
     }
@@ -169,9 +366,10 @@ export default function EditarAgendamentoModal({
   const resetarFormulario = () => {
     setPointId('');
     setQuadraId('');
-    setData('');
-    setHora('');
-    setDuracao(60);
+    // Usar valores iniciais se fornecidos, senão resetar
+    setData(dataInicial || '');
+    setHora(horaInicial || '');
+    setDuracao(duracaoInicial || 60);
     setObservacoes('');
     setValorHora(null);
     setValorCalculado(null);
@@ -183,6 +381,8 @@ export default function EditarAgendamentoModal({
     setModo('normal');
     setAgendamentosExistentes([]);
     setErro('');
+    setAtletasParticipantes([]);
+    setBuscaAtletaParticipante('');
   };
 
   const selecionarQuadraInicial = async (quadraIdParaSelecionar: string) => {
@@ -241,37 +441,19 @@ export default function EditarAgendamentoModal({
       setModo('normal');
     }
 
-    // Preenche campos de recorrência se o agendamento já for recorrente
-    const temRecorrenciaAtual = !!agendamento.recorrenciaId || !!agendamento.recorrenciaConfig;
-    setAgendamentoJaRecorrente(temRecorrenciaAtual);
-    
-    if (temRecorrenciaAtual && agendamento.recorrenciaConfig) {
-      const config = agendamento.recorrenciaConfig;
-      setTemRecorrencia(true);
-      setTipoRecorrencia(config.tipo || null);
-      setIntervaloRecorrencia(config.intervalo || 1);
-      setDiasSemanaRecorrencia(config.diasSemana || []);
-      setDiaMesRecorrencia(config.diaMes || 1);
-      if (config.dataFim) {
-        const dataFim = new Date(config.dataFim);
-        setDataFimRecorrencia(dataFim.toISOString().split('T')[0]);
-      } else {
-        setDataFimRecorrencia('');
-      }
-      setQuantidadeOcorrencias(config.quantidadeOcorrencias || 12);
+    // Preencher atletas participantes
+    if (agendamento.atletasParticipantes && agendamento.atletasParticipantes.length > 0) {
+      const participantes = agendamento.atletasParticipantes
+        .map((p: any) => ({
+          id: p.atletaId,
+          nome: p.atleta?.nome || 'Atleta',
+          telefone: p.atleta?.fone || '',
+        }))
+        .filter((p: any) => p.id);
+      setAtletasParticipantes(participantes);
     } else {
-      // Resetar campos de recorrência se não for recorrente
-      setTemRecorrencia(false);
-      setTipoRecorrencia(null);
-      setIntervaloRecorrencia(1);
-      setDiasSemanaRecorrencia([]);
-      setDiaMesRecorrencia(1);
-      setDataFimRecorrencia('');
-      setQuantidadeOcorrencias(12);
+      setAtletasParticipantes([]);
     }
-    
-    // Resetar opção de aplicar recorrência
-    setAplicarARecorrencia(false);
   };
 
   const carregarQuadras = async (pointId: string) => {
@@ -436,6 +618,156 @@ export default function EditarAgendamentoModal({
     return null;
   };
 
+  const verificarDisponibilidadeGeral = async () => {
+    if (!data || !hora || !duracao) return;
+
+    setCarregandoDisponibilidade(true);
+    try {
+      const dataHoraInicio = `${data}T${hora}:00`;
+      const dataHoraFim = new Date(new Date(dataHoraInicio).getTime() + duracao * 60000).toISOString();
+      const dataInicio = `${data}T00:00:00`;
+      const dataFim = `${data}T23:59:59`;
+
+      const disponibilidadeArray: Array<{
+        point: any;
+        quadras: Array<{
+          quadra: any;
+          disponivel: boolean;
+          motivo?: string;
+        }>;
+      }> = [];
+
+      // Para cada point, verificar disponibilidade de suas quadras
+      for (const point of points) {
+        try {
+          const quadrasDoPoint = await quadraService.listar(point.id);
+          const quadrasAtivas = quadrasDoPoint.filter((q: any) => q.ativo);
+
+          // Buscar agendamentos e bloqueios para este point
+          const [agendamentos, bloqueios] = await Promise.all([
+            agendamentoService.listar({
+              pointId: point.id,
+              dataInicio,
+              dataFim,
+              status: 'CONFIRMADO',
+            }),
+            bloqueioAgendaService.listar({
+              dataInicio,
+              dataFim,
+              apenasAtivos: true,
+            }),
+          ]);
+
+          const quadrasDisponibilidade = quadrasAtivas.map((quadra: any) => {
+            // Verificar conflitos com agendamentos
+            const conflitoAgendamento = agendamentos.find((ag: Agendamento) => {
+              if (ag.quadraId !== quadra.id) return false;
+              const agInicio = new Date(ag.dataHora);
+              const agFim = new Date(agInicio.getTime() + ag.duracao * 60000);
+              const solicitadoInicio = new Date(dataHoraInicio);
+              const solicitadoFim = new Date(dataHoraFim);
+
+              return (
+                (solicitadoInicio >= agInicio && solicitadoInicio < agFim) ||
+                (solicitadoFim > agInicio && solicitadoFim <= agFim) ||
+                (solicitadoInicio <= agInicio && solicitadoFim >= agFim)
+              );
+            });
+
+            if (conflitoAgendamento) {
+              return {
+                quadra,
+                disponivel: false,
+                motivo: 'Horário já agendado',
+              };
+            }
+
+            // Verificar bloqueios
+            const bloqueioAfetando = bloqueios.find((bloqueio: any) => {
+              if (bloqueio.quadraIds === null) {
+                return bloqueio.pointId === point.id;
+              } else {
+                return bloqueio.quadraIds.includes(quadra.id);
+              }
+            });
+
+            if (bloqueioAfetando) {
+              const bloqueioInicio = new Date(bloqueioAfetando.dataHoraInicio);
+              const bloqueioFim = new Date(bloqueioAfetando.dataHoraFim);
+              const solicitadoInicio = new Date(dataHoraInicio);
+              const solicitadoFim = new Date(dataHoraFim);
+
+              const temConflito =
+                (solicitadoInicio >= bloqueioInicio && solicitadoInicio < bloqueioFim) ||
+                (solicitadoFim > bloqueioInicio && solicitadoFim <= bloqueioFim) ||
+                (solicitadoInicio <= bloqueioInicio && solicitadoFim >= bloqueioFim);
+
+              if (temConflito) {
+                return {
+                  quadra,
+                  disponivel: false,
+                  motivo: 'Horário bloqueado',
+                };
+              }
+            }
+
+            return {
+              quadra,
+              disponivel: true,
+            };
+          });
+
+          if (quadrasDisponibilidade.length > 0) {
+            disponibilidadeArray.push({
+              point,
+              quadras: quadrasDisponibilidade,
+            });
+          }
+        } catch (error) {
+          console.error(`Erro ao verificar disponibilidade do point ${point.id}:`, error);
+        }
+      }
+
+      setDisponibilidade(disponibilidadeArray);
+    } catch (error) {
+      console.error('Erro ao verificar disponibilidade geral:', error);
+    } finally {
+      setCarregandoDisponibilidade(false);
+    }
+  };
+
+  const selecionarQuadraDisponivel = async (pointIdSelecionado: string, quadraIdSelecionada: string) => {
+    console.log('selecionarQuadraDisponivel chamado:', { pointIdSelecionado, quadraIdSelecionada, data, hora, duracao });
+    
+    // Primeiro atualizar os estados
+    setPointId(pointIdSelecionado);
+    setQuadraId(quadraIdSelecionada);
+    
+    // Carregar quadras para garantir que está na lista
+    await carregarQuadras(pointIdSelecionado);
+    
+    // Carregar valores da quadra selecionada passando os parâmetros diretamente
+    // para evitar problemas com estados ainda não atualizados
+    if (data && hora && duracao) {
+      console.log('Chamando carregarValoresQuadra com:', { quadraIdSelecionada, data, hora, duracao });
+      await carregarValoresQuadra(quadraIdSelecionada, data, hora, duracao);
+    } else {
+      console.log('Não chamando carregarValoresQuadra - faltando:', { data, hora, duracao });
+    }
+    
+    // Verificar disponibilidade específica da quadra selecionada
+    if (data) {
+      // Aguardar um pouco para garantir que o estado quadraId foi atualizado
+      await new Promise(resolve => setTimeout(resolve, 50));
+      await verificarDisponibilidade();
+    }
+    
+    // Verificar disponibilidade novamente para atualizar a tabela
+    if (data && hora && duracao) {
+      await verificarDisponibilidadeGeral();
+    }
+  };
+
   const validarFormulario = (): string | null => {
     if (!quadraId || !data || !hora) {
       return 'Preencha todos os campos obrigatórios';
@@ -460,16 +792,6 @@ export default function EditarAgendamentoModal({
       const telefoneLimpo = telefoneAvulso.replace(/\D/g, '');
       if (telefoneLimpo.length < 10) {
         return 'Telefone inválido';
-      }
-    }
-
-    // Validação de recorrência (criação e edição)
-    if (temRecorrencia) {
-      if (!tipoRecorrencia) {
-        return 'Selecione o tipo de recorrência';
-      }
-      if (tipoRecorrencia === 'SEMANAL' && diasSemanaRecorrencia.length === 0) {
-        return 'Selecione pelo menos um dia da semana para recorrência semanal';
       }
     }
 
@@ -507,8 +829,10 @@ export default function EditarAgendamentoModal({
         observacoes: observacoes || undefined,
       };
 
-      // Se for admin/organizador e mudou o modo, atualiza os campos específicos
+      // A API já faz a vinculação automática para USER, então não precisamos enviar atletaId
+      // Para ADMIN/ORGANIZER, usar a lógica de modo
       if (canGerenciarAgendamento) {
+        // Para ADMIN/ORGANIZER, usar a lógica de modo
         if (modo === 'atleta' && atletaId) {
           payload.atletaId = atletaId;
           // Remove campos de avulso se existirem
@@ -535,40 +859,14 @@ export default function EditarAgendamentoModal({
         }
       }
 
-      // Configuração de recorrência (criação e edição)
-      if (temRecorrencia && tipoRecorrencia) {
-        const recorrenciaConfig: RecorrenciaConfig = {
-          tipo: tipoRecorrencia,
-          intervalo: intervaloRecorrencia,
-        };
-
-        if (tipoRecorrencia === 'SEMANAL' && diasSemanaRecorrencia.length > 0) {
-          recorrenciaConfig.diasSemana = diasSemanaRecorrencia;
-        }
-
-        if (tipoRecorrencia === 'MENSAL' && diaMesRecorrencia) {
-          recorrenciaConfig.diaMes = diaMesRecorrencia;
-        }
-
-        if (dataFimRecorrencia) {
-          recorrenciaConfig.dataFim = `${dataFimRecorrencia}T23:59:59`;
-        } else if (quantidadeOcorrencias) {
-          recorrenciaConfig.quantidadeOcorrencias = quantidadeOcorrencias;
-        }
-
-        payload.recorrencia = recorrenciaConfig;
-      } else if (agendamento?.recorrenciaId) {
-        // Se era recorrente e desmarcou, enviar null para limpar
-        payload.recorrencia = null;
+      // Atletas participantes
+      if (atletasParticipantes.length > 0) {
+        payload.atletasParticipantesIds = atletasParticipantes.map((p) => p.id);
       }
 
       let resultado;
       if (agendamento) {
         // Modo edição
-        // Se o agendamento já é recorrente, adicionar opção de aplicar apenas neste ou em todos os futuros
-        if (agendamentoJaRecorrente) {
-          payload.aplicarARecorrencia = aplicarARecorrencia;
-        }
         resultado = await agendamentoService.atualizar(agendamento.id, payload);
       } else {
         // Modo criação
@@ -634,8 +932,8 @@ export default function EditarAgendamentoModal({
               : 'Preencha os dados para criar um novo agendamento'}
           </p>
 
-          {/* Seletor de Modo (apenas para admin/organizador) */}
-          {canGerenciarAgendamento && (
+          {/* Seletor de Modo (apenas para admin/organizador) - USER sempre usa modo atleta */}
+          {canGerenciarAgendamento && !(usuario?.role === 'USER' && !agendamento) && (
             <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
               <label className="block text-sm font-medium text-gray-700 mb-3">
                 Tipo de Agendamento
@@ -682,7 +980,23 @@ export default function EditarAgendamentoModal({
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Seleção de Atleta (modo atleta) */}
+            {/* Para USER, mostrar informações do próprio perfil de atleta */}
+            {usuario?.role === 'USER' && !agendamento && meuPerfilAtleta && (
+              <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                <div className="flex items-center gap-2 mb-2">
+                  <Users className="w-5 h-5 text-purple-600" />
+                  <span className="text-sm font-medium text-purple-900">Agendamento para você</span>
+                </div>
+                <div className="text-sm text-purple-700">
+                  <p className="font-semibold">{meuPerfilAtleta?.nome || 'Carregando...'}</p>
+                  {meuPerfilAtleta?.fone && (
+                    <p className="text-purple-600 mt-1">📞 {meuPerfilAtleta.fone}</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Seleção de Atleta (modo atleta) - apenas para ADMIN/ORGANIZER */}
             {canGerenciarAgendamento && modo === 'atleta' && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -763,100 +1077,294 @@ export default function EditarAgendamentoModal({
               </div>
             )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <MapPin className="inline w-4 h-4 mr-1" />
-                  Estabelecimento
-                </label>
-                {isAdmin ? (
+            {/* Data, Hora e Duração - Ocultar se já foram preenchidos na página principal (novo agendamento) */}
+            {(!(!agendamento && dataInicial && horaInicial && duracaoInicial) || agendamento) && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <Calendar className="inline w-4 h-4 mr-1" />
+                    Data *
+                  </label>
+                  <input
+                    type="date"
+                    value={data}
+                    onChange={(e) => setData(e.target.value)}
+                    min={new Date().toISOString().split('T')[0]}
+                    required
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <Clock className="inline w-4 h-4 mr-1" />
+                    Hora *
+                  </label>
+                  <input
+                    type="time"
+                    value={hora}
+                    onChange={(e) => setHora(e.target.value)}
+                    required
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Duração (min) *</label>
                   <select
-                    value={pointId}
-                    onChange={(e) => {
-                      setPointId(e.target.value);
-                      setQuadraId('');
-                    }}
+                    value={duracao}
+                    onChange={(e) => setDuracao(Number(e.target.value))}
                     required
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                   >
-                    <option value="">Selecione um estabelecimento</option>
-                    {points.map((point) => (
-                      <option key={point.id} value={point.id}>
-                        {point.nome}
-                      </option>
-                    ))}
+                    <option value={30}>30 minutos</option>
+                    <option value={60}>1 hora</option>
+                    <option value={90}>1h30</option>
+                    <option value={120}>2 horas</option>
                   </select>
+                </div>
+              </div>
+            )}
+
+            {/* Mostrar resumo quando data/hora/duração vieram da página principal */}
+            {!agendamento && dataInicial && horaInicial && duracaoInicial && (
+              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <p className="text-sm font-medium text-blue-900 mb-2">Horário Selecionado:</p>
+                <div className="grid grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <span className="text-blue-700">Data: </span>
+                    <span className="text-blue-900 font-semibold">
+                      {new Date(data).toLocaleDateString('pt-BR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                      })}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-blue-700">Hora: </span>
+                    <span className="text-blue-900 font-semibold">{hora}</span>
+                  </div>
+                  <div>
+                    <span className="text-blue-700">Duração: </span>
+                    <span className="text-blue-900 font-semibold">{duracao} min</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Tabela de Disponibilidade (apenas para novo agendamento com data/hora/duração) */}
+            {!agendamento && data && hora && duracao ? (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  <MapPin className="inline w-4 h-4 mr-1" />
+                  Arenas e Quadras Disponíveis
+                </label>
+                {carregandoDisponibilidade ? (
+                  <div className="text-center py-8 text-gray-600">
+                    Verificando disponibilidade...
+                  </div>
+                ) : disponibilidade.length === 0 ? (
+                  <div className="text-center py-8 text-gray-600">
+                    Nenhuma quadra disponível para o horário selecionado.
+                  </div>
                 ) : (
-                  <div className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-sm text-gray-700">
-                    {isOrganizer ? 'Arena do gestor' : agendamento?.quadra?.point?.nome || 'Selecione um estabelecimento'}
+                  <div className="border border-gray-200 rounded-lg overflow-hidden">
+                    <div className="max-h-96 overflow-y-auto">
+                      <table className="w-full">
+                        <thead className="bg-gray-50 sticky top-0">
+                          <tr>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Arena</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Quadra</th>
+                            <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">Status</th>
+                            <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">Ação</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          {disponibilidade.map((item) =>
+                            item.quadras.map((q) => (
+                              <tr key={q.quadra.id} className="hover:bg-gray-50">
+                                <td className="px-4 py-3 text-sm text-gray-900">
+                                  {item.point.logoUrl && (
+                                    <img
+                                      src={item.point.logoUrl}
+                                      alt={item.point.nome}
+                                      className="w-6 h-6 inline-block mr-2 rounded object-contain"
+                                    />
+                                  )}
+                                  {item.point.nome}
+                                </td>
+                                <td className="px-4 py-3 text-sm text-gray-700">
+                                  {q.quadra.nome}
+                                  {q.quadra.tipo && <span className="text-gray-500 ml-1">({q.quadra.tipo})</span>}
+                                </td>
+                                <td className="px-4 py-3 text-center">
+                                  {q.disponivel ? (
+                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                      Disponível
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                      {q.motivo || 'Indisponível'}
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="px-4 py-3 text-center">
+                                  {q.disponivel ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => selecionarQuadraDisponivel(item.point.id, q.quadra.id)}
+                                      className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                                    >
+                                      Selecionar
+                                    </button>
+                                  ) : (
+                                    <span className="text-xs text-gray-400">—</span>
+                                  )}
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+                {quadraId && (
+                  <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <p className="text-sm text-blue-800">
+                      <strong>Quadra selecionada:</strong>{' '}
+                      {quadras.find((q) => q.id === quadraId)?.nome || 'Carregando...'}
+                    </p>
                   </div>
                 )}
               </div>
+            ) : (
+              /* Seleção tradicional (para edição ou quando não há data/hora/duração) */
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <MapPin className="inline w-4 h-4 mr-1" />
+                    Estabelecimento
+                  </label>
+                  {isAdmin ? (
+                    <select
+                      value={pointId}
+                      onChange={(e) => {
+                        setPointId(e.target.value);
+                        setQuadraId('');
+                      }}
+                      required
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    >
+                      <option value="">Selecione um estabelecimento</option>
+                      {points.map((point) => (
+                        <option key={point.id} value={point.id}>
+                          {point.nome}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <div className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-sm text-gray-700">
+                      {isOrganizer ? 'Arena do gestor' : agendamento?.quadra?.point?.nome || 'Selecione um estabelecimento'}
+                    </div>
+                  )}
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Quadra *</label>
-                <select
-                  value={quadraId}
-                  onChange={(e) => setQuadraId(e.target.value)}
-                  required
-                  disabled={!pointId && !isOrganizer}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
-                >
-                  <option value="">Selecione uma quadra</option>
-                  {quadras.map((quadra) => (
-                    <option key={quadra.id} value={quadra.id}>
-                      {quadra.nome} {quadra.tipo && `(${quadra.tipo})`}
-                    </option>
-                  ))}
-                </select>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Quadra *</label>
+                  <select
+                    value={quadraId}
+                    onChange={(e) => setQuadraId(e.target.value)}
+                    required
+                    disabled={!pointId && !isOrganizer}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  >
+                    <option value="">Selecione uma quadra</option>
+                    {quadras.map((quadra) => (
+                      <option key={quadra.id} value={quadra.id}>
+                        {quadra.nome} {quadra.tipo && `(${quadra.tipo})`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
-            </div>
+            )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* Adicionar Atletas Participantes por Telefone */}
+            {(usuario?.role === 'USER' || canGerenciarAgendamento) && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Calendar className="inline w-4 h-4 mr-1" />
-                  Data *
+                  <Users className="inline w-4 h-4 mr-1" />
+                  Atletas Participantes (opcional)
                 </label>
-                <input
-                  type="date"
-                  value={data}
-                  onChange={(e) => setData(e.target.value)}
-                  min={new Date().toISOString().split('T')[0]}
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                />
-              </div>
+                
+                {/* Formulário para adicionar participante */}
+                <div className="mb-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="mb-2">
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Telefone do Atleta *
+                    </label>
+                    <input
+                      type="text"
+                      value={telefoneNovoParticipante}
+                      onChange={(e) => {
+                        // Permitir apenas números, espaços, parênteses, hífens e +
+                        const valor = e.target.value.replace(/[^\d\s()+-]/g, '');
+                        setTelefoneNovoParticipante(valor);
+                      }}
+                      placeholder="(99) 99999-9999"
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      disabled={buscandoAtleta}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={adicionarParticipantePorTelefone}
+                    disabled={buscandoAtleta || !telefoneNovoParticipante.trim()}
+                    className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-colors"
+                  >
+                    {buscandoAtleta ? 'Buscando...' : 'Adicionar Atleta'}
+                  </button>
+                  {/* Exibir erro específico do formulário de participantes */}
+                  {erro && (
+                    <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700">
+                      {erro}
+                    </div>
+                  )}
+                  <p className="mt-2 text-xs text-gray-500">
+                    Informe o telefone do atleta cadastrado no app. Apenas atletas com cadastro podem ser adicionados como participantes.
+                  </p>
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Clock className="inline w-4 h-4 mr-1" />
-                  Hora *
-                </label>
-                <input
-                  type="time"
-                  value={hora}
-                  onChange={(e) => setHora(e.target.value)}
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                />
+                {/* Lista de participantes adicionados */}
+                {atletasParticipantes.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-gray-600">Participantes adicionados:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {atletasParticipantes.map((participante) => (
+                        <span
+                          key={participante.id}
+                          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium bg-blue-100 text-blue-700 border border-blue-200"
+                        >
+                          <Users className="w-4 h-4" />
+                          <span>{participante.nome}</span>
+                          <span className="text-xs text-blue-600">({participante.telefone})</span>
+                          <button
+                            type="button"
+                            onClick={() => removerParticipante(participante.id)}
+                            className="hover:text-blue-900 transition-colors"
+                            title="Remover participante"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Duração (min) *</label>
-                <select
-                  value={duracao}
-                  onChange={(e) => setDuracao(Number(e.target.value))}
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                >
-                  <option value={30}>30 minutos</option>
-                  <option value={60}>1 hora</option>
-                  <option value={90}>1h30</option>
-                  <option value={120}>2 horas</option>
-                </select>
-              </div>
-            </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Observações</label>
@@ -970,201 +1478,15 @@ export default function EditarAgendamentoModal({
               </div>
             )}
 
-            {/* Seção de Recorrência */}
-            <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
-                <div className="flex items-center gap-2 mb-3">
-                  <input
-                    type="checkbox"
-                    id="temRecorrencia"
-                    checked={temRecorrencia}
-                    onChange={(e) => {
-                      setTemRecorrencia(e.target.checked);
-                      if (!e.target.checked) {
-                        setTipoRecorrencia(null);
-                      }
-                    }}
-                    className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-                  />
-                  <label htmlFor="temRecorrencia" className="flex items-center gap-2 text-sm font-medium text-gray-700 cursor-pointer">
-                    <Repeat className="w-4 h-4 text-purple-600" />
-                    Agendamento Recorrente
-                  </label>
-                </div>
 
-                {temRecorrencia && (
-                  <div className="space-y-4 mt-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de Recorrência *</label>
-                      <select
-                        value={tipoRecorrencia || ''}
-                        onChange={(e) => setTipoRecorrencia(e.target.value as TipoRecorrencia || null)}
-                        required
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
-                      >
-                        <option value="">Selecione o tipo</option>
-                        <option value="DIARIO">Diário</option>
-                        <option value="SEMANAL">Semanal</option>
-                        <option value="MENSAL">Mensal</option>
-                      </select>
-                    </div>
-
-                    {tipoRecorrencia && (
-                      <>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Intervalo {tipoRecorrencia === 'DIARIO' ? '(dias)' : tipoRecorrencia === 'SEMANAL' ? '(semanas)' : '(meses)'}
-                          </label>
-                          <input
-                            type="number"
-                            min="1"
-                            value={intervaloRecorrencia}
-                            onChange={(e) => setIntervaloRecorrencia(Math.max(1, parseInt(e.target.value) || 1))}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
-                          />
-                        </div>
-
-                        {tipoRecorrencia === 'SEMANAL' && (
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Dias da Semana *</label>
-                            <div className="grid grid-cols-7 gap-2">
-                              {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((dia, idx) => (
-                                <button
-                                  key={idx}
-                                  type="button"
-                                  onClick={() => {
-                                    if (diasSemanaRecorrencia.includes(idx)) {
-                                      setDiasSemanaRecorrencia(diasSemanaRecorrencia.filter(d => d !== idx));
-                                    } else {
-                                      setDiasSemanaRecorrencia([...diasSemanaRecorrencia, idx]);
-                                    }
-                                  }}
-                                  className={`px-3 py-2 rounded-lg border-2 transition-all ${
-                                    diasSemanaRecorrencia.includes(idx)
-                                      ? 'border-purple-600 bg-purple-100 text-purple-700 font-semibold'
-                                      : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
-                                  }`}
-                                >
-                                  {dia}
-                                </button>
-                              ))}
-                            </div>
-                            {diasSemanaRecorrencia.length === 0 && (
-                              <p className="mt-1 text-xs text-red-600">Selecione pelo menos um dia da semana</p>
-                            )}
-                          </div>
-                        )}
-
-                        {tipoRecorrencia === 'MENSAL' && (
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Dia do Mês</label>
-                            <input
-                              type="number"
-                              min="1"
-                              max="31"
-                              value={diaMesRecorrencia}
-                              onChange={(e) => setDiaMesRecorrencia(Math.min(31, Math.max(1, parseInt(e.target.value) || 1)))}
-                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
-                            />
-                            <p className="mt-1 text-xs text-gray-500">Deixe vazio para usar o mesmo dia do mês da data inicial</p>
-                          </div>
-                        )}
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Data de Término (opcional)</label>
-                            <input
-                              type="date"
-                              value={dataFimRecorrencia}
-                              onChange={(e) => {
-                                setDataFimRecorrencia(e.target.value);
-                                if (e.target.value) {
-                                  setQuantidadeOcorrencias(0);
-                                }
-                              }}
-                              min={data}
-                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Quantidade de Ocorrências (opcional)</label>
-                            <input
-                              type="number"
-                              min="1"
-                              max="365"
-                              value={quantidadeOcorrencias}
-                              onChange={(e) => {
-                                const val = parseInt(e.target.value) || 0;
-                                setQuantidadeOcorrencias(val);
-                                if (val > 0) {
-                                  setDataFimRecorrencia('');
-                                }
-                              }}
-                              disabled={!!dataFimRecorrencia}
-                              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none disabled:bg-gray-100"
-                            />
-                          </div>
-                        </div>
-                        <p className="text-xs text-gray-500">
-                          {dataFimRecorrencia
-                            ? `A recorrência terminará em ${new Date(dataFimRecorrencia).toLocaleDateString('pt-BR')}`
-                            : quantidadeOcorrencias > 0
-                            ? `Serão criados ${quantidadeOcorrencias} agendamento(s)`
-                            : 'A recorrência continuará até ser cancelada manualmente'}
-                        </p>
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
-
-            {/* Opção de aplicar recorrência quando já é recorrente */}
-            {agendamento && agendamentoJaRecorrente && (
-              <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <div className="flex items-start gap-3">
-                  <Repeat className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-blue-900 mb-2">
-                      Este agendamento faz parte de uma recorrência
-                    </p>
-                    <div className="space-y-2">
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="aplicarRecorrencia"
-                          checked={!aplicarARecorrencia}
-                          onChange={() => setAplicarARecorrencia(false)}
-                          className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                        />
-                        <span className="text-sm text-gray-700">
-                          Aplicar alterações apenas neste agendamento
-                        </span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="aplicarRecorrencia"
-                          checked={aplicarARecorrencia}
-                          onChange={() => setAplicarARecorrencia(true)}
-                          className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                        />
-                        <span className="text-sm text-gray-700">
-                          Aplicar alterações neste e em todos os agendamentos futuros desta recorrência
-                        </span>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div className="flex flex-col sm:flex-row gap-3 justify-end pt-4">
+            <div className="flex flex-col sm:flex-row gap-3 justify-end pt-4 border-t border-gray-200">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={salvando}
                 className="w-full sm:w-auto px-6 py-3 bg-gray-200 rounded-lg hover:bg-gray-300 text-gray-800 font-medium transition-colors disabled:opacity-50"
               >
-                Cancelar
+                Fechar
               </button>
               <button
                 type="submit"
@@ -1185,6 +1507,23 @@ export default function EditarAgendamentoModal({
                   'Criar Agendamento'
                 )}
               </button>
+              
+              {/* Botão Cancelar Agendamento - última opção quando estiver editando */}
+              {agendamento && onCancelarAgendamento && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (agendamento) {
+                      onCancelarAgendamento(agendamento);
+                      onClose();
+                    }
+                  }}
+                  disabled={salvando}
+                  className="w-full sm:w-auto px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Cancelar Agendamento
+                </button>
+              )}
             </div>
           </form>
         </Dialog.Panel>
