@@ -99,7 +99,7 @@ export default function QuadrasDisponiveis({ onAgendar }: QuadrasDisponiveisProp
             }
           }
         } catch (error) {
-          console.error(`Erro ao carregar quadras do point ${point.id}:`, error);
+          console.error(`Erro ao carregar quadras do point ${arena.id}:`, error);
         }
       }
 

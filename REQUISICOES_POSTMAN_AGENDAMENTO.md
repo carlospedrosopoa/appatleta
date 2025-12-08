@@ -256,3 +256,4 @@ Headers:
 - Se não tiver, o sistema mostra todas as arenas ativas (fallback implementado)
 
 
+
