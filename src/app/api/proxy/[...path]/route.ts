@@ -16,8 +16,17 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
 ) {
-  const { path } = await params;
-  return handleProxyRequest(request, path, 'POST');
+  try {
+    const { path } = await params;
+    console.log('[PROXY] POST called with path:', path);
+    return handleProxyRequest(request, path, 'POST');
+  } catch (error) {
+    console.error('[PROXY] Error in POST handler:', error);
+    return NextResponse.json(
+      { error: 'Erro ao processar requisição', message: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    );
+  }
 }
 
 export async function PUT(
@@ -73,7 +82,13 @@ async function handleProxyRequest(
       baseUrl = baseUrl.slice(0, -4); // Remove '/api'
     }
     
-    const url = `${baseUrl}/${path}${searchParams ? `?${searchParams}` : ''}`;
+    // Garantir que baseUrl não termina com / e path não começa com /
+    const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+    const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+    
+    const url = `${cleanBaseUrl}/${cleanPath}${searchParams ? `?${searchParams}` : ''}`;
+    
+    console.log('[PROXY]', method, url, { pathSegments, baseUrl: API_BASE_URL });
 
     // Obter headers da requisição original
     const headers: Record<string, string> = {};
@@ -126,9 +141,21 @@ async function handleProxyRequest(
     });
   } catch (error: any) {
     console.error('[PROXY] Erro ao fazer proxy:', error);
+    console.error('[PROXY] Stack:', error.stack);
     return NextResponse.json(
-      { error: 'Erro ao conectar com a API externa', message: error.message },
-      { status: 500 }
+      { 
+        error: 'Erro ao conectar com a API externa', 
+        message: error.message,
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      },
+      { 
+        status: 500,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        },
+      }
     );
   }
 }

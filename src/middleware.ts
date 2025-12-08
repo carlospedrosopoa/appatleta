@@ -3,6 +3,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { handleCorsPreflight, withCors } from '@/lib/cors';
 
 export function middleware(request: NextRequest) {
+  // Pular middleware para rota de proxy (ela já tem seu próprio tratamento CORS)
+  if (request.nextUrl.pathname.startsWith('/api/proxy/')) {
+    return NextResponse.next();
+  }
+
   // Aplica CORS apenas para rotas da API
   if (request.nextUrl.pathname.startsWith('/api/')) {
     // Handle preflight requests (OPTIONS)
