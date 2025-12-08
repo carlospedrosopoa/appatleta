@@ -65,7 +65,7 @@ export interface AtualizarAtletaPayload {
 // Serviço de autenticação para frontend externo
 export const userAuthService = {
   login: async (email: string, password: string) => {
-    const res = await api.post('/user/auth/login', { email, password });
+    const res = await api.post('/auth/login', { email, password });
     return res.data;
   },
 
