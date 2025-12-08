@@ -48,7 +48,7 @@ async function gerarCardBuffer(partida: any): Promise<Buffer> {
     partida.atleta2Nome ? { nome: partida.atleta2Nome, foto: partida.atleta2FotoUrl } : null,
     partida.atleta3Nome ? { nome: partida.atleta3Nome, foto: partida.atleta3FotoUrl } : null,
     partida.atleta4Nome ? { nome: partida.atleta4Nome, foto: partida.atleta4FotoUrl } : null,
-  ].filter(Boolean);
+  ].filter((a): a is { nome: string; foto?: string } => a !== null);
 
   if (atletas.length < 2) {
     throw new Error('Partida deve ter pelo menos 2 atletas para gerar o card');
