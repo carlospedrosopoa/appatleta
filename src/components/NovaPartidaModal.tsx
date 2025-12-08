@@ -88,7 +88,14 @@ export default function NovaPartidaModal({
           setAtletas([]);
         }
       } else {
-        setAtletas(data);
+        // Converter AtletaParaSelecao[] para Atleta[] (mapear null para undefined em categoria)
+        const atletasConvertidos: Atleta[] = data.map((atleta) => ({
+          id: atleta.id,
+          nome: atleta.nome,
+          idade: atleta.idade,
+          categoria: atleta.categoria ?? undefined, // Converter null para undefined
+        }));
+        setAtletas(atletasConvertidos);
         setErro(''); // Limpa erro se encontrou resultados
       }
     } catch (error: any) {
