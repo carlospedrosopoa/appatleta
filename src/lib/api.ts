@@ -1,6 +1,6 @@
 // lib/api.ts - Cliente de API para Next.js (compatível com axios-style)
 // Suporta JWT (preferido) e Basic Auth (fallback)
-// Se NEXT_PUBLIC_API_URL aponta para URL externa, usa proxy para evitar CORS
+// Faz requisições diretas para a API externa (requer CORS configurado na API)
 const getBaseUrl = () => {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
   
@@ -9,16 +9,8 @@ const getBaseUrl = () => {
     console.log('[API] NEXT_PUBLIC_API_URL:', apiUrl);
   }
   
-  // Se a URL é externa (não começa com /), usa proxy para evitar CORS
-  if (apiUrl.startsWith('http')) {
-    // Sempre usa proxy para URLs externas (desenvolvimento ou produção)
-    // O proxy faz a requisição do lado do servidor, evitando problemas de CORS
-    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-      console.log('[API] Usando proxy para URL externa:', apiUrl);
-    }
-    return '/api/proxy';
-  }
-  
+  // Retorna a URL diretamente (sem proxy)
+  // A API externa deve ter CORS configurado para permitir requisições deste frontend
   return apiUrl;
 };
 
@@ -86,12 +78,8 @@ async function apiRequest(
     });
   }
   
-  // Se BASE_URL é proxy, adiciona o endpoint ao path do proxy
-  // Remove a barra inicial do endpoint se existir para evitar duplicação
-  const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
-  const url = BASE_URL.startsWith('/api/proxy') 
-    ? `${BASE_URL}/${cleanEndpoint}`
-    : `${BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+  // Construir URL completa
+  const url = `${BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
   
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
