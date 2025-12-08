@@ -390,7 +390,6 @@ export default function EditarAgendamentoModal({
     setAgendamentosExistentes([]);
     setErro('');
     setAtletasParticipantes([]);
-    setBuscaAtletaParticipante('');
   };
 
   const selecionarQuadraInicial = async (quadraIdParaSelecionar: string) => {
