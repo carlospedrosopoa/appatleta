@@ -5,8 +5,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
-import { pointService } from '@/services/agendamentoService';
-import type { Point } from '@/types/agendamento';
+import { userArenaService, userAtletaService, type Arena } from '@/services/userAtletaService';
 
 interface AtletaForm {
   nome: string;
