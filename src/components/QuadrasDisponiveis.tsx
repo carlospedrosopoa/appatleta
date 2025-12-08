@@ -53,8 +53,24 @@ export default function QuadrasDisponiveis({ onAgendar }: QuadrasDisponiveisProp
       // Carregar todas as quadras ativas
       const todasQuadras: (Quadra & { point: Point; precoMinimo?: number })[] = [];
 
-      for (const point of pointsAtivos) {
+      for (const arena of pointsAtivos) {
         try {
+          // Converter Arena para Point adicionando propriedades faltantes
+          const point: Point = {
+            id: arena.id,
+            nome: arena.nome,
+            endereco: arena.endereco,
+            telefone: arena.telefone,
+            email: arena.email,
+            descricao: arena.descricao,
+            logoUrl: arena.logoUrl ?? null,
+            latitude: arena.latitude ?? null,
+            longitude: arena.longitude ?? null,
+            ativo: arena.ativo,
+            createdAt: new Date().toISOString(), // Valor padrão
+            updatedAt: new Date().toISOString(), // Valor padrão
+          };
+
           const quadrasDoPoint = await quadraService.listar(point.id);
           const quadrasAtivas = quadrasDoPoint.filter((q) => q.ativo);
 
