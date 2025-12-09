@@ -95,6 +95,7 @@ export const agendamentoService = {
     if (filtros?.dataFim) params.push(`dataFim=${filtros.dataFim}`);
     if (filtros?.status) params.push(`status=${filtros.status}`);
     if (filtros?.apenasMeus) params.push(`apenasMeus=true`);
+    if (filtros?.incluirPassados) params.push(`incluirPassados=true`);
 
     const queryString = params.length > 0 ? `?${params.join("&")}` : "";
     const res = await api.get(`/agendamento${queryString}`);
