@@ -1015,12 +1015,12 @@ export default function EditarAgendamentoModal({
   return (
     <Dialog open={isOpen} onClose={onClose} className="relative z-50">
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" aria-hidden="true" />
-      <div className="fixed inset-0 flex items-center justify-center p-4">
-        <Dialog.Panel className="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-          <Dialog.Title className="text-2xl font-bold text-gray-900 mb-2">
+      <div className="fixed inset-0 flex items-center justify-center p-2 sm:p-4">
+        <Dialog.Panel className="bg-white rounded-xl sm:rounded-2xl shadow-2xl p-4 sm:p-6 md:p-8 w-full max-w-2xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
+          <Dialog.Title className="text-xl sm:text-2xl font-bold text-gray-900 mb-1 sm:mb-2">
             {agendamento ? 'Editar Agendamento' : 'Novo Agendamento'}
           </Dialog.Title>
-          <p className="text-sm text-gray-600 mb-6">
+          <p className="text-xs sm:text-sm text-gray-600 mb-4 sm:mb-6">
             {agendamento
               ? 'Atualize as informações do agendamento'
               : 'Preencha os dados para criar um novo agendamento'}
@@ -1028,15 +1028,15 @@ export default function EditarAgendamentoModal({
 
           {/* Seletor de Modo (apenas para admin/organizador) - USER sempre usa modo atleta */}
           {canGerenciarAgendamento && !(usuario?.role === 'USER' && !agendamento) && (
-            <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <label className="block text-sm font-medium text-gray-700 mb-3">
+            <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2 sm:mb-3">
                 Tipo de Agendamento
               </label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
                 <button
                   type="button"
                   onClick={() => setModo('normal')}
-                  className={`flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition-all ${
+                  className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border-2 transition-all text-sm sm:text-base ${
                     modo === 'normal'
                       ? 'border-blue-600 bg-blue-100 text-blue-700'
                       : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
@@ -1073,15 +1073,15 @@ export default function EditarAgendamentoModal({
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
             {/* Para USER, mostrar informações do próprio perfil de atleta */}
             {usuario?.role === 'USER' && !agendamento && meuPerfilAtleta && (
-              <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
-                <div className="flex items-center gap-2 mb-2">
-                  <Users className="w-5 h-5 text-purple-600" />
-                  <span className="text-sm font-medium text-purple-900">Agendamento para você</span>
+              <div className="p-3 sm:p-4 bg-purple-50 rounded-lg border border-purple-200">
+                <div className="flex items-center gap-2 mb-1.5 sm:mb-2">
+                  <Users className="w-4 sm:w-5 h-4 sm:h-5 text-purple-600" />
+                  <span className="text-xs sm:text-sm font-medium text-purple-900">Agendamento para você</span>
                 </div>
-                <div className="text-sm text-purple-700">
+                <div className="text-xs sm:text-sm text-purple-700">
                   <p className="font-semibold">{meuPerfilAtleta?.nome || 'Carregando...'}</p>
                   {meuPerfilAtleta?.fone && (
                     <p className="text-purple-600 mt-1">📞 {meuPerfilAtleta.fone}</p>
@@ -1093,12 +1093,12 @@ export default function EditarAgendamentoModal({
             {/* Seleção de Atleta (modo atleta) - apenas para ADMIN/ORGANIZER */}
             {canGerenciarAgendamento && modo === 'atleta' && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Users className="inline w-4 h-4 mr-1" />
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
+                  <Users className="inline w-3.5 sm:w-4 h-3.5 sm:h-4 mr-1" />
                   Selecionar Atleta *
                 </label>
                 {carregandoAtletas ? (
-                  <div className="px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-center text-gray-600">
+                  <div className="px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-300 rounded-lg bg-gray-50 text-center text-xs sm:text-sm text-gray-600">
                     Carregando atletas...
                   </div>
                 ) : (
@@ -1108,13 +1108,13 @@ export default function EditarAgendamentoModal({
                       value={buscaAtleta}
                       onChange={(e) => setBuscaAtleta(e.target.value)}
                       placeholder="Buscar por nome ou telefone..."
-                      className="mb-2 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
+                      className="mb-2 w-full px-3 sm:px-4 py-2 sm:py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
                     />
                     <select
                       value={atletaId}
                       onChange={(e) => setAtletaId(e.target.value)}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                     >
                       <option value="">Selecione um atleta</option>
                       {atletasFiltrados.map((atleta) => (
@@ -1135,10 +1135,10 @@ export default function EditarAgendamentoModal({
 
             {/* Campos Avulso (modo avulso) */}
             {canGerenciarAgendamento && modo === 'avulso' && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <UserPlus className="inline w-4 h-4 mr-1" />
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
+                    <UserPlus className="inline w-3.5 sm:w-4 h-3.5 sm:h-4 mr-1" />
                     Nome *
                   </label>
                   <input
@@ -1147,11 +1147,11 @@ export default function EditarAgendamentoModal({
                     onChange={(e) => setNomeAvulso(e.target.value)}
                     required
                     placeholder="Nome completo"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Telefone *</label>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Telefone *</label>
                   <input
                     type="text"
                     value={telefoneAvulso}
@@ -1165,7 +1165,7 @@ export default function EditarAgendamentoModal({
                     }}
                     required
                     placeholder="(99) 99999-9999"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                   />
                 </div>
               </div>
@@ -1173,20 +1173,20 @@ export default function EditarAgendamentoModal({
 
             {/* Data, Hora e Duração - Ocultar se já foram preenchidos na página principal (novo agendamento) */}
             {(!(!agendamento && dataInicial && horaInicial && duracaoInicial) || agendamento) && (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                 {!podeAlterarDataHora && agendamento && (
-                  <div className="col-span-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <div className="flex items-center gap-2 text-yellow-800">
-                      <AlertCircle className="w-4 h-4" />
-                      <p className="text-sm font-medium">
+                  <div className="col-span-3 p-2.5 sm:p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <div className="flex items-start gap-2 text-yellow-800">
+                      <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                      <p className="text-xs sm:text-sm font-medium leading-relaxed">
                         Não é possível alterar data, hora ou duração. Faltam menos de 12 horas para o início do agendamento.
                       </p>
                     </div>
                   </div>
                 )}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <Calendar className="inline w-4 h-4 mr-1" />
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
+                    <Calendar className="inline w-3.5 sm:w-4 h-3.5 sm:h-4 mr-1" />
                     Data *
                   </label>
                   <input
@@ -1196,13 +1196,13 @@ export default function EditarAgendamentoModal({
                     min={new Date().toISOString().split('T')[0]}
                     required
                     disabled={!podeAlterarDataHora && !!agendamento}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <Clock className="inline w-4 h-4 mr-1" />
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
+                    <Clock className="inline w-3.5 sm:w-4 h-3.5 sm:h-4 mr-1" />
                     Hora *
                   </label>
                   <input
@@ -1211,18 +1211,18 @@ export default function EditarAgendamentoModal({
                     onChange={(e) => setHora(e.target.value)}
                     required
                     disabled={!podeAlterarDataHora && !!agendamento}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Duração (min) *</label>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Duração (min) *</label>
                   <select
                     value={duracao}
                     onChange={(e) => setDuracao(Number(e.target.value))}
                     required
                     disabled={!podeAlterarDataHora && !!agendamento}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
                   >
                     <option value={30}>30 minutos</option>
                     <option value={60}>1 hora</option>
@@ -1348,10 +1348,10 @@ export default function EditarAgendamentoModal({
               </div>
             ) : (
               /* Seleção tradicional (para edição ou quando não há data/hora/duração) */
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <MapPin className="inline w-4 h-4 mr-1" />
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
+                    <MapPin className="inline w-3.5 sm:w-4 h-3.5 sm:h-4 mr-1" />
                     Estabelecimento
                   </label>
                   {isAdmin ? (
@@ -1362,7 +1362,7 @@ export default function EditarAgendamentoModal({
                         setQuadraId('');
                       }}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                     >
                       <option value="">Selecione um estabelecimento</option>
                       {points.map((point) => (
@@ -1372,20 +1372,20 @@ export default function EditarAgendamentoModal({
                       ))}
                     </select>
                   ) : (
-                    <div className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-sm text-gray-700">
+                    <div className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-lg bg-gray-50 text-xs sm:text-sm text-gray-700">
                       {isOrganizer ? 'Arena do gestor' : agendamento?.quadra?.point?.nome || 'Selecione um estabelecimento'}
                     </div>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Quadra *</label>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Quadra *</label>
                   <select
                     value={quadraId}
                     onChange={(e) => setQuadraId(e.target.value)}
                     required
                     disabled={!pointId && !isOrganizer}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
                   >
                     <option value="">Selecione uma quadra</option>
                     {quadras.map((quadra) => (
@@ -1402,22 +1402,22 @@ export default function EditarAgendamentoModal({
             {(usuario?.role === 'USER' || canGerenciarAgendamento) && (
               <div>
                 {!podeAlterarDetalhes && agendamento && (
-                  <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <div className="flex items-center gap-2 text-yellow-800">
-                      <AlertCircle className="w-4 h-4" />
-                      <p className="text-sm font-medium">
+                  <div className="mb-3 p-2.5 sm:p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <div className="flex items-start gap-2 text-yellow-800">
+                      <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                      <p className="text-xs sm:text-sm font-medium leading-relaxed">
                         Não é possível alterar participantes. O agendamento está {agendamento.status === 'CONCLUIDO' ? 'concluído' : 'cancelado'}.
                       </p>
                     </div>
                   </div>
                 )}
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Users className="inline w-4 h-4 mr-1" />
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
+                  <Users className="inline w-3.5 sm:w-4 h-3.5 sm:h-4 mr-1" />
                   Atletas Participantes (opcional)
                 </label>
                 
                 {/* Formulário para adicionar participante */}
-                <div className="mb-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="mb-3 p-2.5 sm:p-3 bg-gray-50 rounded-lg border border-gray-200">
                   <div className="mb-2">
                     <label className="block text-xs font-medium text-gray-600 mb-1">
                       Telefone do Atleta *
@@ -1431,7 +1431,7 @@ export default function EditarAgendamentoModal({
                         setTelefoneNovoParticipante(valor);
                       }}
                       placeholder="(99) 99999-9999"
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                      className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
                       disabled={buscandoAtleta || (!podeAlterarDetalhes && !!agendamento)}
                     />
                   </div>
@@ -1439,7 +1439,7 @@ export default function EditarAgendamentoModal({
                     type="button"
                     onClick={adicionarParticipantePorTelefone}
                     disabled={buscandoAtleta || !telefoneNovoParticipante.trim() || (!podeAlterarDetalhes && !!agendamento)}
-                    className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-colors"
+                    className="w-full px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-colors"
                   >
                     {buscandoAtleta ? 'Buscando...' : 'Adicionar Atleta'}
                   </button>
@@ -1486,22 +1486,22 @@ export default function EditarAgendamentoModal({
 
             <div>
               {!podeAlterarDetalhes && agendamento && (
-                <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <div className="flex items-center gap-2 text-yellow-800">
-                    <AlertCircle className="w-4 h-4" />
-                    <p className="text-sm font-medium">
+                <div className="mb-3 p-2.5 sm:p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <div className="flex items-start gap-2 text-yellow-800">
+                    <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs sm:text-sm font-medium leading-relaxed">
                       Não é possível alterar observações. O agendamento está {agendamento.status === 'CONCLUIDO' ? 'concluído' : 'cancelado'}.
                     </p>
                   </div>
                 </div>
               )}
-              <label className="block text-sm font-medium text-gray-700 mb-2">Observações</label>
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">Observações</label>
               <textarea
                 value={observacoes}
                 onChange={(e) => setObservacoes(e.target.value)}
                 rows={3}
                 disabled={!podeAlterarDetalhes && !!agendamento}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
                 placeholder="Informações adicionais sobre o agendamento..."
               />
             </div>
@@ -1608,19 +1608,19 @@ export default function EditarAgendamentoModal({
             )}
 
 
-            <div className="flex flex-col sm:flex-row gap-3 justify-end pt-4 border-t border-gray-200">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-end pt-3 sm:pt-4 border-t border-gray-200">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={salvando}
-                className="w-full sm:w-auto px-6 py-3 bg-gray-200 rounded-lg hover:bg-gray-300 text-gray-800 font-medium transition-colors disabled:opacity-50"
+                className="w-full sm:w-auto px-5 sm:px-6 py-2.5 sm:py-3 bg-gray-200 rounded-lg hover:bg-gray-300 text-gray-800 text-sm sm:text-base font-medium transition-colors disabled:opacity-50"
               >
                 Fechar
               </button>
               <button
                 type="submit"
                 disabled={salvando || !!conflito}
-                className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="w-full sm:w-auto px-5 sm:px-6 py-2.5 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm sm:text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {salvando ? (
                   <span className="flex items-center justify-center">
@@ -1648,7 +1648,7 @@ export default function EditarAgendamentoModal({
                     }
                   }}
                   disabled={salvando}
-                  className="w-full sm:w-auto px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full sm:w-auto px-5 sm:px-6 py-2.5 sm:py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm sm:text-base font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Cancelar Agendamento
                 </button>
