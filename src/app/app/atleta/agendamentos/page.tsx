@@ -310,13 +310,28 @@ export default function AgendamentosPage() {
           ) : (
             <div className="space-y-2">
               {agendamentos.map((agendamento) => {
-                const dataHora = new Date(agendamento.dataHora);
-                const dataFim = new Date(dataHora.getTime() + agendamento.duracao * 60000);
+                // Extrair data/hora diretamente da string UTC sem conversão de timezone
+                // Isso garante que 20h gravado = 20h exibido (igual ao organizer)
+                const dataHoraStr = agendamento.dataHora;
+                const match = dataHoraStr.match(/T(\d{2}):(\d{2})/);
+                const horaInicio = match ? parseInt(match[1], 10) : 0;
+                const minutoInicio = match ? parseInt(match[2], 10) : 0;
+                
+                // Calcular hora de fim
+                const minutosTotais = horaInicio * 60 + minutoInicio + agendamento.duracao;
+                const horaFim = Math.floor(minutosTotais / 60) % 24;
+                const minutoFim = minutosTotais % 60;
+                
+                // Extrair data para exibição e comparações
+                const dataPart = dataHoraStr.split('T')[0];
+                const [ano, mes, dia] = dataPart.split('-').map(Number);
+                const dataHora = new Date(ano, mes - 1, dia, horaInicio, minutoInicio); // Para formatação e comparações
+                const dataFim = new Date(ano, mes - 1, dia, horaFim, minutoFim);
+                
                 const info = getInfoAgendamento(agendamento);
                 const hoje = new Date();
                 hoje.setHours(0, 0, 0, 0);
-                const dataAgendamentoDate = new Date(dataHora);
-                dataAgendamentoDate.setHours(0, 0, 0, 0);
+                const dataAgendamentoDate = new Date(ano, mes - 1, dia);
                 const isHoje = dataAgendamentoDate.getTime() === hoje.getTime();
                 const isPassado = dataAgendamentoDate < hoje;
                 const isExpandido = agendamentoExpandido === agendamento.id;
@@ -349,10 +364,7 @@ export default function AgendamentosPage() {
                           <div className="flex items-center gap-1 text-xs text-gray-600 mt-0.5">
                             <Clock className="w-3 h-3" />
                             <span>
-                              {dataHora.toLocaleTimeString('pt-BR', {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })}
+                              {String(horaInicio).padStart(2, '0')}:{String(minutoInicio).padStart(2, '0')}
                             </span>
                           </div>
                         </div>
@@ -440,17 +452,11 @@ export default function AgendamentosPage() {
                             <div className="flex items-center gap-1.5">
                               <Clock className="w-3 h-3" />
                               <span className="font-medium">
-                                {dataHora.toLocaleTimeString('pt-BR', {
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                })}
+                                {String(horaInicio).padStart(2, '0')}:{String(minutoInicio).padStart(2, '0')}
                               </span>
                               <span className="text-blue-500">→</span>
                               <span className="font-medium">
-                                {dataFim.toLocaleTimeString('pt-BR', {
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                })}
+                                {String(horaFim).padStart(2, '0')}:{String(minutoFim).padStart(2, '0')}
                               </span>
                             </div>
                             <span className="text-blue-500">•</span>

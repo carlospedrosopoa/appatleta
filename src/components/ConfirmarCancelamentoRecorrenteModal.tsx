@@ -20,7 +20,16 @@ export default function ConfirmarCancelamentoRecorrenteModal({
 }: ConfirmarCancelamentoRecorrenteModalProps) {
   if (!agendamento) return null;
 
-  const dataHora = new Date(agendamento.dataHora);
+  // Extrair data/hora diretamente da string UTC sem conversão de timezone
+  const dataHoraStr = agendamento.dataHora;
+  const match = dataHoraStr.match(/T(\d{2}):(\d{2})/);
+  const horaInicio = match ? parseInt(match[1], 10) : 0;
+  const minutoInicio = match ? parseInt(match[2], 10) : 0;
+  
+  // Extrair data para exibição
+  const dataPart = dataHoraStr.split('T')[0];
+  const [ano, mes, dia] = dataPart.split('-').map(Number);
+  const dataHora = new Date(ano, mes - 1, dia, horaInicio, minutoInicio);
 
   return (
     <Dialog open={isOpen} onClose={onClose} className="relative z-50">
@@ -54,10 +63,7 @@ export default function ConfirmarCancelamentoRecorrenteModal({
                 day: 'numeric',
               })}
               {' às '}
-              {dataHora.toLocaleTimeString('pt-BR', {
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
+              {String(horaInicio).padStart(2, '0')}:{String(minutoInicio).padStart(2, '0')}
             </p>
             {agendamento.quadra && (
               <div className="mt-2 text-sm text-gray-600">

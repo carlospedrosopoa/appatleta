@@ -610,14 +610,18 @@ export default function EditarAgendamentoModal({
         (horaFim > agInicio && horaFim <= agFim) ||
         (horaInicio <= agInicio && horaFim >= agFim)
       ) {
-        const inicio = new Date(agInicio).toLocaleTimeString('pt-BR', {
-          hour: '2-digit',
-          minute: '2-digit',
-        });
-        const fim = new Date(agFim).toLocaleTimeString('pt-BR', {
-          hour: '2-digit',
-          minute: '2-digit',
-        });
+        // Extrair hora diretamente da string sem conversão de timezone
+        const agDataHoraStr = ag.dataHora;
+        const agMatch = agDataHoraStr.match(/T(\d{2}):(\d{2})/);
+        const agHoraInicio = agMatch ? parseInt(agMatch[1], 10) : 0;
+        const agMinutoInicio = agMatch ? parseInt(agMatch[2], 10) : 0;
+        
+        const minutosTotais = agHoraInicio * 60 + agMinutoInicio + ag.duracao;
+        const agHoraFim = Math.floor(minutosTotais / 60) % 24;
+        const agMinutoFim = minutosTotais % 60;
+        
+        const inicio = `${String(agHoraInicio).padStart(2, '0')}:${String(agMinutoInicio).padStart(2, '0')}`;
+        const fim = `${String(agHoraFim).padStart(2, '0')}:${String(agMinutoFim).padStart(2, '0')}`;
         return `Conflito com agendamento existente das ${inicio} às ${fim}`;
       }
     }
@@ -918,11 +922,12 @@ export default function EditarAgendamentoModal({
     if (!data) return [];
 
     return agendamentosExistentes.map((ag) => {
-      const agData = new Date(ag.dataHora);
-      return agData.toLocaleTimeString('pt-BR', {
-        hour: '2-digit',
-        minute: '2-digit',
-      });
+      // Extrair hora diretamente da string sem conversão de timezone
+      const agDataHoraStr = ag.dataHora;
+      const match = agDataHoraStr.match(/T(\d{2}):(\d{2})/);
+      const horaInicio = match ? parseInt(match[1], 10) : 0;
+      const minutoInicio = match ? parseInt(match[2], 10) : 0;
+      return `${String(horaInicio).padStart(2, '0')}:${String(minutoInicio).padStart(2, '0')}`;
     });
   };
 
