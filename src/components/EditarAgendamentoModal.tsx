@@ -93,6 +93,37 @@ export default function EditarAgendamentoModal({
   const [telefoneNovoParticipante, setTelefoneNovoParticipante] = useState('');
   const [buscandoAtleta, setBuscandoAtleta] = useState(false);
 
+  // Verificar se pode alterar data/hora/duração (precisa faltar 12 horas ou mais)
+  const podeAlterarDataHora = useMemo(() => {
+    if (!agendamento || !agendamento.dataHora) return true; // Novo agendamento sempre pode
+    
+    // Extrair data/hora do agendamento atual
+    const dataHoraStr = agendamento.dataHora;
+    const match = dataHoraStr.match(/T(\d{2}):(\d{2})/);
+    if (!match) return true;
+    
+    const hora = parseInt(match[1], 10);
+    const minuto = parseInt(match[2], 10);
+    const dataPart = dataHoraStr.split('T')[0];
+    const [ano, mes, dia] = dataPart.split('-').map(Number);
+    
+    // Criar data/hora do agendamento
+    const dataHoraAgendamento = new Date(ano, mes - 1, dia, hora, minuto);
+    
+    // Verificar se faltam 12 horas ou mais
+    const agora = new Date();
+    const diferencaMs = dataHoraAgendamento.getTime() - agora.getTime();
+    const diferencaHoras = diferencaMs / (1000 * 60 * 60);
+    
+    return diferencaHoras >= 12;
+  }, [agendamento]);
+
+  // Verificar se pode alterar observações e atletas (não pode se status for CONCLUIDO ou CANCELADO)
+  const podeAlterarDetalhes = useMemo(() => {
+    if (!agendamento) return true; // Novo agendamento sempre pode
+    return agendamento.status !== 'CONCLUIDO' && agendamento.status !== 'CANCELADO';
+  }, [agendamento]);
+
 
   useEffect(() => {
     if (isOpen) {
@@ -1143,6 +1174,16 @@ export default function EditarAgendamentoModal({
             {/* Data, Hora e Duração - Ocultar se já foram preenchidos na página principal (novo agendamento) */}
             {(!(!agendamento && dataInicial && horaInicial && duracaoInicial) || agendamento) && (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {!podeAlterarDataHora && agendamento && (
+                  <div className="col-span-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <div className="flex items-center gap-2 text-yellow-800">
+                      <AlertCircle className="w-4 h-4" />
+                      <p className="text-sm font-medium">
+                        Não é possível alterar data, hora ou duração. Faltam menos de 12 horas para o início do agendamento.
+                      </p>
+                    </div>
+                  </div>
+                )}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     <Calendar className="inline w-4 h-4 mr-1" />
@@ -1154,7 +1195,8 @@ export default function EditarAgendamentoModal({
                     onChange={(e) => setData(e.target.value)}
                     min={new Date().toISOString().split('T')[0]}
                     required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    disabled={!podeAlterarDataHora && !!agendamento}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
                   />
                 </div>
 
@@ -1168,7 +1210,8 @@ export default function EditarAgendamentoModal({
                     value={hora}
                     onChange={(e) => setHora(e.target.value)}
                     required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    disabled={!podeAlterarDataHora && !!agendamento}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
                   />
                 </div>
 
@@ -1178,7 +1221,8 @@ export default function EditarAgendamentoModal({
                     value={duracao}
                     onChange={(e) => setDuracao(Number(e.target.value))}
                     required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    disabled={!podeAlterarDataHora && !!agendamento}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
                   >
                     <option value={30}>30 minutos</option>
                     <option value={60}>1 hora</option>
@@ -1357,6 +1401,16 @@ export default function EditarAgendamentoModal({
             {/* Adicionar Atletas Participantes por Telefone */}
             {(usuario?.role === 'USER' || canGerenciarAgendamento) && (
               <div>
+                {!podeAlterarDetalhes && agendamento && (
+                  <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <div className="flex items-center gap-2 text-yellow-800">
+                      <AlertCircle className="w-4 h-4" />
+                      <p className="text-sm font-medium">
+                        Não é possível alterar participantes. O agendamento está {agendamento.status === 'CONCLUIDO' ? 'concluído' : 'cancelado'}.
+                      </p>
+                    </div>
+                  </div>
+                )}
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   <Users className="inline w-4 h-4 mr-1" />
                   Atletas Participantes (opcional)
@@ -1377,14 +1431,14 @@ export default function EditarAgendamentoModal({
                         setTelefoneNovoParticipante(valor);
                       }}
                       placeholder="(99) 99999-9999"
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                      disabled={buscandoAtleta}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                      disabled={buscandoAtleta || (!podeAlterarDetalhes && !!agendamento)}
                     />
                   </div>
                   <button
                     type="button"
                     onClick={adicionarParticipantePorTelefone}
-                    disabled={buscandoAtleta || !telefoneNovoParticipante.trim()}
+                    disabled={buscandoAtleta || !telefoneNovoParticipante.trim() || (!podeAlterarDetalhes && !!agendamento)}
                     className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-colors"
                   >
                     {buscandoAtleta ? 'Buscando...' : 'Adicionar Atleta'}
@@ -1416,7 +1470,8 @@ export default function EditarAgendamentoModal({
                           <button
                             type="button"
                             onClick={() => removerParticipante(participante.id)}
-                            className="hover:text-blue-900 transition-colors"
+                            disabled={!podeAlterarDetalhes && !!agendamento}
+                            className="hover:text-blue-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             title="Remover participante"
                           >
                             <X className="w-4 h-4" />
@@ -1430,12 +1485,23 @@ export default function EditarAgendamentoModal({
             )}
 
             <div>
+              {!podeAlterarDetalhes && agendamento && (
+                <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <div className="flex items-center gap-2 text-yellow-800">
+                    <AlertCircle className="w-4 h-4" />
+                    <p className="text-sm font-medium">
+                      Não é possível alterar observações. O agendamento está {agendamento.status === 'CONCLUIDO' ? 'concluído' : 'cancelado'}.
+                    </p>
+                  </div>
+                </div>
+              )}
               <label className="block text-sm font-medium text-gray-700 mb-2">Observações</label>
               <textarea
                 value={observacoes}
                 onChange={(e) => setObservacoes(e.target.value)}
                 rows={3}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                disabled={!podeAlterarDetalhes && !!agendamento}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
                 placeholder="Informações adicionais sobre o agendamento..."
               />
             </div>

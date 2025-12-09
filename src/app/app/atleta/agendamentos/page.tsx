@@ -542,13 +542,6 @@ export default function AgendamentosPage() {
                               <Edit className="w-4 h-4" />
                               Editar
                             </button>
-                            <button
-                              onClick={() => handleCancelar(agendamento)}
-                              className="flex items-center gap-2 px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm font-medium flex-1 justify-center"
-                            >
-                              <X className="w-4 h-4" />
-                              Cancelar
-                            </button>
                           </div>
                         )}
                       </div>
