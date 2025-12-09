@@ -148,13 +148,13 @@ export default function AgendamentosPage() {
     };
 
     const icons = {
-      CONFIRMADO: <CheckCircle className="w-3 h-3" />,
-      CANCELADO: <XCircle className="w-3 h-3" />,
-      CONCLUIDO: <CalendarCheck className="w-3 h-3" />,
+      CONFIRMADO: <CheckCircle className="w-2.5 h-2.5" />,
+      CANCELADO: <XCircle className="w-2.5 h-2.5" />,
+      CONCLUIDO: <CalendarCheck className="w-2.5 h-2.5" />,
     };
 
     return (
-      <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-medium ${styles[status]}`}>
+      <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-medium ${styles[status]}`}>
         {icons[status]}
         {status}
       </span>
@@ -377,25 +377,27 @@ export default function AgendamentosPage() {
                             </h3>
                           </div>
                           <div className="flex items-center gap-1.5 text-xs text-gray-600">
-                            {agendamento.quadra.point.logoUrl && (
-                              <img
-                                src={agendamento.quadra.point.logoUrl}
-                                alt={`Logo ${agendamento.quadra.point.nome}`}
-                                className="w-3 h-3 object-contain rounded"
-                              />
-                            )}
                             <MapPin className="w-3 h-3" />
                             <span className="truncate">{agendamento.quadra.point.nome}</span>
                           </div>
                         </div>
 
-                        {/* Status e Indicadores */}
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          {getStatusBadge(agendamento.status)}
-                          {isPassado && (
-                            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-                              Passado
-                            </span>
+                        {/* Status e Logo */}
+                        <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                          <div className="flex items-center gap-2">
+                            {getStatusBadge(agendamento.status)}
+                            {isPassado && (
+                              <span className="px-2 py-0.5 rounded-full text-[9px] font-medium bg-gray-100 text-gray-600">
+                                Passado
+                              </span>
+                            )}
+                          </div>
+                          {agendamento.quadra.point.logoUrl && (
+                            <img
+                              src={agendamento.quadra.point.logoUrl}
+                              alt={`Logo ${agendamento.quadra.point.nome}`}
+                              className="w-8 h-8 object-contain rounded"
+                            />
                           )}
                         </div>
 
