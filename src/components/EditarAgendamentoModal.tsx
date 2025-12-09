@@ -577,8 +577,9 @@ export default function EditarAgendamentoModal({
       }
 
       // Verificar se há sobreposição de horários
-      const bloqueioInicio = bloqueio.horaInicio;
-      const bloqueioFim = bloqueio.horaFim;
+      // TypeScript: garantir que não são null nem undefined
+      const bloqueioInicio = bloqueio.horaInicio ?? 0;
+      const bloqueioFim = bloqueio.horaFim ?? 1439;
 
       if (
         (solMinutosInicio >= bloqueioInicio && solMinutosInicio < bloqueioFim) ||
@@ -753,8 +754,9 @@ export default function EditarAgendamentoModal({
                 }
                 
                 // Verificar sobreposição de horários
-                const bloqueioInicio = bloqueioAfetando.horaInicio;
-                const bloqueioFim = bloqueioAfetando.horaFim;
+                // TypeScript: garantir que não são null nem undefined
+                const bloqueioInicio = bloqueioAfetando.horaInicio ?? 0;
+                const bloqueioFim = bloqueioAfetando.horaFim ?? 1439;
                 
                 const temConflito =
                   (solMinutosInicio >= bloqueioInicio && solMinutosInicio < bloqueioFim) ||
