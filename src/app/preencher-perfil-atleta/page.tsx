@@ -134,11 +134,16 @@ export default function PreencherPerfilAtletaPage() {
     };
 
     try {
-      await userAtletaService.criar(payload);
+      console.log('[CRIAR ATLETA DEBUG] Payload sendo enviado:', payload);
+      const resultado = await userAtletaService.criar(payload);
+      console.log('[CRIAR ATLETA DEBUG] Atleta criado com sucesso:', resultado);
       router.push('/dashboard');
     } catch (error: any) {
-      console.error('Erro ao criar atleta:', error);
-      setErro(error?.response?.data?.mensagem || error?.message || 'Erro ao salvar perfil. Tente novamente.');
+      console.error('[CRIAR ATLETA DEBUG] Erro ao criar atleta:', error);
+      console.error('[CRIAR ATLETA DEBUG] Status:', error?.status);
+      console.error('[CRIAR ATLETA DEBUG] Response:', error?.response);
+      console.error('[CRIAR ATLETA DEBUG] Data:', error?.data);
+      setErro(error?.response?.data?.mensagem || error?.data?.mensagem || error?.message || 'Erro ao salvar perfil. Tente novamente.');
     }
   };
 
