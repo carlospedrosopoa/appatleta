@@ -914,13 +914,37 @@ export default function EditarAgendamentoModal({
       // Enviar o horário escolhido pelo usuário sem conversão de timezone
       // O backend vai salvar exatamente como informado (tratando como UTC direto)
       // Isso garante que 20h escolhido = 20h gravado no banco
-      const dataHora = `${data}T${hora}:00`;
       const payload: any = {
-        quadraId,
-        dataHora,
-        duracao,
         observacoes: observacoes || undefined,
       };
+      
+      // Só enviar dataHora, duracao e quadraId se realmente foram alterados (modo edição)
+      if (agendamento) {
+        // Verificar se data/hora foi alterada
+        const dataHoraAtual = agendamento.dataHora;
+        const dataHoraNova = `${data}T${hora}:00`;
+        const dataHoraAtualNormalizada = dataHoraAtual ? dataHoraAtual.substring(0, 16) : null; // YYYY-MM-DDTHH:mm
+        const dataHoraNovaNormalizada = dataHoraNova.substring(0, 16);
+        
+        if (dataHoraAtualNormalizada !== dataHoraNovaNormalizada) {
+          payload.dataHora = dataHoraNova;
+        }
+        
+        // Verificar se duração foi alterada
+        if (duracao !== agendamento.duracao) {
+          payload.duracao = duracao;
+        }
+        
+        // Verificar se quadra foi alterada
+        if (quadraId !== agendamento.quadraId) {
+          payload.quadraId = quadraId;
+        }
+      } else {
+        // Modo criação - sempre enviar
+        payload.dataHora = `${data}T${hora}:00`;
+        payload.duracao = duracao;
+        payload.quadraId = quadraId;
+      }
 
       // A API já faz a vinculação automática para USER, então não precisamos enviar atletaId
       // Para ADMIN/ORGANIZER, usar a lógica de modo
