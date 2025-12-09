@@ -539,40 +539,34 @@ export default function EditarAgendamentoModal({
   const verificarConflito = (): string | null => {
     if (!data || !hora || !duracao || !quadraId) return null;
 
+    // Extrair componentes do horário solicitado
+    const [solHoraNum, solMinutoNum] = hora.split(':').map(Number);
+    const solMinutosInicio = solHoraNum * 60 + solMinutoNum;
+    const solMinutosFim = solMinutosInicio + duracao;
+    
+    // Verificar se não é no passado (comparar data e hora)
     const agora = new Date();
-    const dataHoraSelecionada = new Date(`${data}T${hora}:00`);
-
-    // Não permitir agendamento no passado
-    if (dataHoraSelecionada < agora) {
+    const [solAno, solMes, solDia] = data.split('-').map(Number);
+    const dataSolicitada = new Date(solAno, solMes - 1, solDia, solHoraNum, solMinutoNum);
+    
+    if (dataSolicitada < agora) {
       return 'Não é possível agendar no passado';
     }
 
     // Verificar conflitos com bloqueios
-    const horaInicio = dataHoraSelecionada.getTime();
-    const horaFim = horaInicio + duracao * 60000;
-    const minutosInicio = dataHoraSelecionada.getHours() * 60 + dataHoraSelecionada.getMinutes();
-    const minutosFim = minutosInicio + duracao;
-
     for (const bloqueio of bloqueiosExistentes) {
-      const dataInicioBloqueio = new Date(bloqueio.dataInicio);
-      const dataFimBloqueio = new Date(bloqueio.dataFim);
+      // Extrair componentes das datas do bloqueio
+      const bloqueioDataInicioStr = bloqueio.dataInicio;
+      const bloqueioDataFimStr = bloqueio.dataFim;
+      const [bloqAnoInicio, bloqMesInicio, bloqDiaInicio] = bloqueioDataInicioStr.split('T')[0].split('-').map(Number);
+      const [bloqAnoFim, bloqMesFim, bloqDiaFim] = bloqueioDataFimStr.split('T')[0].split('-').map(Number);
       
       // Verificar se o dia está dentro do período do bloqueio
-      const anoDia = dataHoraSelecionada.getFullYear();
-      const mesDia = dataHoraSelecionada.getMonth();
-      const diaDia = dataHoraSelecionada.getDate();
-      
-      const anoInicio = dataInicioBloqueio.getFullYear();
-      const mesInicio = dataInicioBloqueio.getMonth();
-      const diaInicio = dataInicioBloqueio.getDate();
-      
-      const anoFim = dataFimBloqueio.getFullYear();
-      const mesFim = dataFimBloqueio.getMonth();
-      const diaFim = dataFimBloqueio.getDate();
-      
       const diaEstaNoPeriodo = 
-        (anoDia > anoInicio || (anoDia === anoInicio && mesDia > mesInicio) || (anoDia === anoInicio && mesDia === mesInicio && diaDia >= diaInicio)) &&
-        (anoDia < anoFim || (anoDia === anoFim && mesDia < mesFim) || (anoDia === anoFim && mesDia === mesFim && diaDia <= diaFim));
+        (solAno > bloqAnoInicio || (solAno === bloqAnoInicio && solMes > bloqMesInicio) || 
+         (solAno === bloqAnoInicio && solMes === bloqMesInicio && solDia >= bloqDiaInicio)) &&
+        (solAno < bloqAnoFim || (solAno === bloqAnoFim && solMes < bloqMesFim) || 
+         (solAno === bloqAnoFim && solMes === bloqMesFim && solDia <= bloqDiaFim));
 
       if (!diaEstaNoPeriodo) continue;
 
@@ -587,9 +581,9 @@ export default function EditarAgendamentoModal({
       const bloqueioFim = bloqueio.horaFim;
 
       if (
-        (minutosInicio >= bloqueioInicio && minutosInicio < bloqueioFim) ||
-        (minutosFim > bloqueioInicio && minutosFim <= bloqueioFim) ||
-        (minutosInicio <= bloqueioInicio && minutosFim >= bloqueioFim)
+        (solMinutosInicio >= bloqueioInicio && solMinutosInicio < bloqueioFim) ||
+        (solMinutosFim > bloqueioInicio && solMinutosFim <= bloqueioFim) ||
+        (solMinutosInicio <= bloqueioInicio && solMinutosFim >= bloqueioFim)
       ) {
         const horaInicioBloqueio = Math.floor(bloqueioInicio / 60);
         const minutoInicioBloqueio = bloqueioInicio % 60;
@@ -601,26 +595,35 @@ export default function EditarAgendamentoModal({
     }
 
     // Verificar conflitos com agendamentos existentes
+    // Usar a mesma lógica da API: comparar diretamente os componentes extraídos
     for (const ag of agendamentosExistentes) {
-      const agInicio = new Date(ag.dataHora).getTime();
-      const agFim = agInicio + ag.duracao * 60000;
-
+      // Extrair componentes do agendamento existente
+      const agDataHoraStr = ag.dataHora;
+      const agMatch = agDataHoraStr.match(/T(\d{2}):(\d{2})/);
+      const agHora = agMatch ? parseInt(agMatch[1], 10) : 0;
+      const agMinuto = agMatch ? parseInt(agMatch[2], 10) : 0;
+      const agDataPart = agDataHoraStr.split('T')[0];
+      const [agAno, agMes, agDia] = agDataPart.split('-').map(Number);
+      
+      // Verificar se é o mesmo dia
+      if (agAno !== solAno || agMes !== solMes || agDia !== solDia) {
+        continue;
+      }
+      
+      // Calcular minutos do agendamento existente
+      const agMinutosInicio = agHora * 60 + agMinuto;
+      const agMinutosFim = agMinutosInicio + ag.duracao;
+      
+      // Verificar sobreposição (mesma lógica da API)
       if (
-        (horaInicio >= agInicio && horaInicio < agFim) ||
-        (horaFim > agInicio && horaFim <= agFim) ||
-        (horaInicio <= agInicio && horaFim >= agFim)
+        (solMinutosInicio >= agMinutosInicio && solMinutosInicio < agMinutosFim) ||
+        (solMinutosFim > agMinutosInicio && solMinutosFim <= agMinutosFim) ||
+        (solMinutosInicio <= agMinutosInicio && solMinutosFim >= agMinutosFim)
       ) {
-        // Extrair hora diretamente da string sem conversão de timezone
-        const agDataHoraStr = ag.dataHora;
-        const agMatch = agDataHoraStr.match(/T(\d{2}):(\d{2})/);
-        const agHoraInicio = agMatch ? parseInt(agMatch[1], 10) : 0;
-        const agMinutoInicio = agMatch ? parseInt(agMatch[2], 10) : 0;
+        const agHoraFim = Math.floor(agMinutosFim / 60) % 24;
+        const agMinutoFim = agMinutosFim % 60;
         
-        const minutosTotais = agHoraInicio * 60 + agMinutoInicio + ag.duracao;
-        const agHoraFim = Math.floor(minutosTotais / 60) % 24;
-        const agMinutoFim = minutosTotais % 60;
-        
-        const inicio = `${String(agHoraInicio).padStart(2, '0')}:${String(agMinutoInicio).padStart(2, '0')}`;
+        const inicio = `${String(agHora).padStart(2, '0')}:${String(agMinuto).padStart(2, '0')}`;
         const fim = `${String(agHoraFim).padStart(2, '0')}:${String(agMinutoFim).padStart(2, '0')}`;
         return `Conflito com agendamento existente das ${inicio} às ${fim}`;
       }
@@ -669,19 +672,41 @@ export default function EditarAgendamentoModal({
             }),
           ]);
 
+          // Extrair componentes do horário solicitado uma vez para usar em todas as verificações
+          const [solDataPart, solHoraPart] = dataHoraInicio.split('T');
+          const [solAno, solMes, solDia] = solDataPart.split('-').map(Number);
+          const [solHora, solMinuto] = solHoraPart.split(':').map(Number);
+          const solMinutosInicio = solHora * 60 + solMinuto;
+          const solMinutosFim = solMinutosInicio + duracao;
+
           const quadrasDisponibilidade = quadrasAtivas.map((quadra: any) => {
             // Verificar conflitos com agendamentos
+            // Usar a mesma lógica da API: extrair componentes da data/hora e comparar diretamente
             const conflitoAgendamento = agendamentos.find((ag: Agendamento) => {
               if (ag.quadraId !== quadra.id) return false;
-              const agInicio = new Date(ag.dataHora);
-              const agFim = new Date(agInicio.getTime() + ag.duracao * 60000);
-              const solicitadoInicio = new Date(dataHoraInicio);
-              const solicitadoFim = new Date(dataHoraFim);
-
+              
+              // Extrair componentes do agendamento existente
+              const agDataHoraStr = ag.dataHora;
+              const agMatch = agDataHoraStr.match(/T(\d{2}):(\d{2})/);
+              const agHora = agMatch ? parseInt(agMatch[1], 10) : 0;
+              const agMinuto = agMatch ? parseInt(agMatch[2], 10) : 0;
+              const agDataPart = agDataHoraStr.split('T')[0];
+              const [agAno, agMes, agDia] = agDataPart.split('-').map(Number);
+              
+              // Calcular fim do agendamento existente
+              const agMinutosInicio = agHora * 60 + agMinuto;
+              const agMinutosFim = agMinutosInicio + ag.duracao;
+              
+              // Verificar se é o mesmo dia
+              if (agAno !== solAno || agMes !== solMes || agDia !== solDia) {
+                return false;
+              }
+              
+              // Verificar sobreposição de horários (mesma lógica da API)
               return (
-                (solicitadoInicio >= agInicio && solicitadoInicio < agFim) ||
-                (solicitadoFim > agInicio && solicitadoFim <= agFim) ||
-                (solicitadoInicio <= agInicio && solicitadoFim >= agFim)
+                (solMinutosInicio >= agMinutosInicio && solMinutosInicio < agMinutosFim) ||
+                (solMinutosFim > agMinutosInicio && solMinutosFim <= agMinutosFim) ||
+                (solMinutosInicio <= agMinutosInicio && solMinutosFim >= agMinutosFim)
               );
             });
 
@@ -703,33 +728,46 @@ export default function EditarAgendamentoModal({
             });
 
             if (bloqueioAfetando) {
-              // Construir data/hora completa do bloqueio combinando dataInicio/dataFim com horaInicio/horaFim
-              const bloqueioDataInicio = new Date(bloqueioAfetando.dataInicio);
-              const bloqueioDataFim = new Date(bloqueioAfetando.dataFim);
+              // Extrair componentes das datas do bloqueio
+              const bloqueioDataInicioStr = bloqueioAfetando.dataInicio;
+              const bloqueioDataFimStr = bloqueioAfetando.dataFim;
+              const [bloqAnoInicio, bloqMesInicio, bloqDiaInicio] = bloqueioDataInicioStr.split('T')[0].split('-').map(Number);
+              const [bloqAnoFim, bloqMesFim, bloqDiaFim] = bloqueioDataFimStr.split('T')[0].split('-').map(Number);
               
-              // Se horaInicio/horaFim existem, usar; senão, usar início/fim do dia
-              const bloqueioHoraInicio = bloqueioAfetando.horaInicio ?? 0;
-              const bloqueioHoraFim = bloqueioAfetando.horaFim ?? 1439; // 23:59 em minutos
+              // Verificar se o dia está dentro do período do bloqueio
+              const diaEstaNoPeriodo = 
+                (solAno > bloqAnoInicio || (solAno === bloqAnoInicio && solMes > bloqMesInicio) || 
+                 (solAno === bloqAnoInicio && solMes === bloqMesInicio && solDia >= bloqDiaInicio)) &&
+                (solAno < bloqAnoFim || (solAno === bloqAnoFim && solMes < bloqMesFim) || 
+                 (solAno === bloqAnoFim && solMes === bloqMesFim && solDia <= bloqDiaFim));
               
-              bloqueioDataInicio.setHours(Math.floor(bloqueioHoraInicio / 60), bloqueioHoraInicio % 60, 0, 0);
-              bloqueioDataFim.setHours(Math.floor(bloqueioHoraFim / 60), bloqueioHoraFim % 60, 59, 999);
-              
-              const bloqueioInicio = bloqueioDataInicio;
-              const bloqueioFim = bloqueioDataFim;
-              const solicitadoInicio = new Date(dataHoraInicio);
-              const solicitadoFim = new Date(dataHoraFim);
+              if (diaEstaNoPeriodo) {
+                // Verificar horário
+                if (bloqueioAfetando.horaInicio === null || bloqueioAfetando.horaFim === null) {
+                  // Dia inteiro bloqueado
+                  return {
+                    quadra,
+                    disponivel: false,
+                    motivo: 'Horário bloqueado',
+                  };
+                }
+                
+                // Verificar sobreposição de horários
+                const bloqueioInicio = bloqueioAfetando.horaInicio;
+                const bloqueioFim = bloqueioAfetando.horaFim;
+                
+                const temConflito =
+                  (solMinutosInicio >= bloqueioInicio && solMinutosInicio < bloqueioFim) ||
+                  (solMinutosFim > bloqueioInicio && solMinutosFim <= bloqueioFim) ||
+                  (solMinutosInicio <= bloqueioInicio && solMinutosFim >= bloqueioFim);
 
-              const temConflito =
-                (solicitadoInicio >= bloqueioInicio && solicitadoInicio < bloqueioFim) ||
-                (solicitadoFim > bloqueioInicio && solicitadoFim <= bloqueioFim) ||
-                (solicitadoInicio <= bloqueioInicio && solicitadoFim >= bloqueioFim);
-
-              if (temConflito) {
-                return {
-                  quadra,
-                  disponivel: false,
-                  motivo: 'Horário bloqueado',
-                };
+                if (temConflito) {
+                  return {
+                    quadra,
+                    disponivel: false,
+                    motivo: 'Horário bloqueado',
+                  };
+                }
               }
             }
 
