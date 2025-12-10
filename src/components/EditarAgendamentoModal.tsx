@@ -1302,62 +1302,122 @@ export default function EditarAgendamentoModal({
                 ) : (
                   <div className="border border-gray-200 rounded-lg overflow-hidden">
                     <div className="max-h-96 overflow-y-auto">
-                      <table className="w-full">
-                        <thead className="bg-gray-50 sticky top-0">
-                          <tr>
-                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Arena</th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Quadra</th>
-                            <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">Status</th>
-                            <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">Ação</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200">
-                          {disponibilidade.map((item) =>
-                            item.quadras.map((q) => (
-                              <tr key={q.quadra.id} className="hover:bg-gray-50">
-                                <td className="px-4 py-3 text-sm text-gray-900">
-                                  {item.point.logoUrl && (
-                                    <img
-                                      src={item.point.logoUrl}
-                                      alt={item.point.nome}
-                                      className="w-6 h-6 inline-block mr-2 rounded object-contain"
-                                    />
-                                  )}
-                                  {item.point.nome}
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-700">
-                                  {q.quadra.nome}
-                                  {q.quadra.tipo && <span className="text-gray-500 ml-1">({q.quadra.tipo})</span>}
-                                </td>
-                                <td className="px-4 py-3 text-center">
-                                  {q.disponivel ? (
-                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                      Disponível
-                                    </span>
-                                  ) : (
-                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                      {q.motivo || 'Indisponível'}
-                                    </span>
-                                  )}
-                                </td>
-                                <td className="px-4 py-3 text-center">
-                                  {q.disponivel ? (
+                      {/* Layout mobile: cards empilhados */}
+                      <div className="block md:hidden space-y-3 p-3">
+                        {disponibilidade.map((item) =>
+                          item.quadras.map((q) => (
+                            <div key={q.quadra.id} className="bg-white border border-gray-200 rounded-lg p-3">
+                              <div className="flex items-start gap-2 mb-2">
+                                {item.point.logoUrl && (
+                                  <img
+                                    src={item.point.logoUrl}
+                                    alt={item.point.nome}
+                                    className="w-6 h-6 rounded object-contain flex-shrink-0"
+                                  />
+                                )}
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-gray-900 truncate">{item.point.nome}</p>
+                                  <p className="text-sm text-gray-700">
+                                    {q.quadra.nome}
+                                    {q.quadra.tipo && <span className="text-gray-500 ml-1">({q.quadra.tipo})</span>}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-between gap-2">
+                                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                  q.disponivel
+                                    ? 'bg-green-100 text-green-800'
+                                    : 'bg-red-100 text-red-800'
+                                }`}>
+                                  {q.disponivel ? 'Disponível' : (q.motivo || 'Indisponível')}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (q.disponivel) {
+                                      selecionarQuadraDisponivel(item.point.id, q.quadra.id);
+                                    }
+                                  }}
+                                  disabled={!q.disponivel}
+                                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors flex-shrink-0 ${
+                                    q.disponivel
+                                      ? 'bg-blue-600 text-white hover:bg-blue-700 cursor-pointer'
+                                      : 'bg-gray-200 text-gray-500 cursor-not-allowed opacity-60'
+                                  }`}
+                                  title={q.disponivel ? 'Selecionar quadra' : q.motivo || 'Indisponível'}
+                                >
+                                  {q.disponivel ? 'Selecionar' : (q.motivo || 'Indisponível')}
+                                </button>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                      {/* Layout desktop: tabela */}
+                      <div className="hidden md:block">
+                        <table className="w-full">
+                          <thead className="bg-gray-50 sticky top-0">
+                            <tr>
+                              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Arena</th>
+                              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Quadra</th>
+                              <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">Status</th>
+                              <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">Ação</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-200">
+                            {disponibilidade.map((item) =>
+                              item.quadras.map((q) => (
+                                <tr key={q.quadra.id} className="hover:bg-gray-50">
+                                  <td className="px-4 py-3 text-sm text-gray-900">
+                                    {item.point.logoUrl && (
+                                      <img
+                                        src={item.point.logoUrl}
+                                        alt={item.point.nome}
+                                        className="w-6 h-6 inline-block mr-2 rounded object-contain"
+                                      />
+                                    )}
+                                    {item.point.nome}
+                                  </td>
+                                  <td className="px-4 py-3 text-sm text-gray-700">
+                                    {q.quadra.nome}
+                                    {q.quadra.tipo && <span className="text-gray-500 ml-1">({q.quadra.tipo})</span>}
+                                  </td>
+                                  <td className="px-4 py-3 text-center">
+                                    {q.disponivel ? (
+                                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        Disponível
+                                      </span>
+                                    ) : (
+                                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                        {q.motivo || 'Indisponível'}
+                                      </span>
+                                    )}
+                                  </td>
+                                  <td className="px-4 py-3 text-center">
                                     <button
                                       type="button"
-                                      onClick={() => selecionarQuadraDisponivel(item.point.id, q.quadra.id)}
-                                      className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                                      onClick={() => {
+                                        if (q.disponivel) {
+                                          selecionarQuadraDisponivel(item.point.id, q.quadra.id);
+                                        }
+                                      }}
+                                      disabled={!q.disponivel}
+                                      className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                                        q.disponivel
+                                          ? 'bg-blue-600 text-white hover:bg-blue-700 cursor-pointer'
+                                          : 'bg-gray-200 text-gray-500 cursor-not-allowed opacity-60'
+                                      }`}
+                                      title={q.disponivel ? 'Selecionar quadra' : q.motivo || 'Indisponível'}
                                     >
-                                      Selecionar
+                                      {q.disponivel ? 'Selecionar' : (q.motivo || 'Indisponível')}
                                     </button>
-                                  ) : (
-                                    <span className="text-xs text-gray-400">—</span>
-                                  )}
-                                </td>
-                              </tr>
-                            ))
-                          )}
-                        </tbody>
-                      </table>
+                                  </td>
+                                </tr>
+                              ))
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   </div>
                 )}
