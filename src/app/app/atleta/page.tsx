@@ -1,4 +1,4 @@
-// app/app/atleta/page.tsx - Página index do atleta (redireciona para dashboard)
+// app/app/atleta/page.tsx - Página index do atleta (redireciona para agendamentos)
 'use client';
 
 import { useEffect } from 'react';
@@ -8,7 +8,7 @@ export default function AtletaIndexPage() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace('/app/atleta/dashboard');
+    router.replace('/app/atleta/agendamentos');
   }, [router]);
 
   return (
