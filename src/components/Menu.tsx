@@ -52,7 +52,7 @@ const Menu = () => {
           {/* Logo/Brand */}
           <div className="flex-shrink-0">
             <Link href="/dashboard" className="text-xl font-bold text-blue-600">
-              Carlão BT Online
+              Play Na Quadra
             </Link>
           </div>
 

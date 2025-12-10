@@ -1,6 +1,6 @@
 {
-  "name": "App Atleta",
-  "short_name": "Atleta",
+  "name": "Play Na Quadra",
+  "short_name": "Play Na Quadra",
   "description": "App para gerenciar agendamentos e partidas de tênis",
   "start_url": "/",
   "display": "standalone",

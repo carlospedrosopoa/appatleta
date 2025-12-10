@@ -28,7 +28,7 @@ export default function AtletaLayout({ children }: { children: React.ReactNode }
       <header className="bg-white shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="text-xl font-bold text-blue-600">Carlão BT Online</span>
+            <span className="text-xl font-bold text-blue-600">Play Na Quadra</span>
             <span className="text-xs px-2 py-1 rounded-full bg-blue-50 text-blue-700 font-semibold">
               Área do Atleta
             </span>
