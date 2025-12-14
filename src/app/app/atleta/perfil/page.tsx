@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
+import { userArenaService, userAtletaService, type Arena } from '@/services/userAtletaService';
 
 interface ModalEditarFotoProps {
   isOpen: boolean;
@@ -156,6 +157,301 @@ function ModalEditarFoto({ isOpen, atletaId, fotoAtual, onClose, onSuccess }: Mo
             </button>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+interface ModalEditarAtletaProps {
+  isOpen: boolean;
+  atleta: Atleta;
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+function ModalEditarAtleta({ isOpen, atleta, onClose, onSuccess }: ModalEditarAtletaProps) {
+  const [form, setForm] = useState({
+    nome: atleta.nome || '',
+    dataNascimento: atleta.dataNascimento ? atleta.dataNascimento.split('T')[0] : '',
+    genero: atleta.genero || '',
+    categoria: atleta.categoria || '',
+    fone: atleta.fone || '',
+  });
+  const [points, setPoints] = useState<Arena[]>([]);
+  const [pointIdPrincipal, setPointIdPrincipal] = useState<string>(atleta.pointIdPrincipal || '');
+  const [pointIdsFrequentes, setPointIdsFrequentes] = useState<string[]>(
+    atleta.arenasFrequentes?.map(a => a.id) || []
+  );
+  const [erro, setErro] = useState('');
+  const [salvando, setSalvando] = useState(false);
+  const [carregandoArenas, setCarregandoArenas] = useState(true);
+
+  // Atualizar formulário quando o modal abrir ou atleta mudar
+  useEffect(() => {
+    if (isOpen && atleta) {
+      setForm({
+        nome: atleta.nome || '',
+        dataNascimento: atleta.dataNascimento ? atleta.dataNascimento.split('T')[0] : '',
+        genero: atleta.genero || '',
+        categoria: atleta.categoria || '',
+        fone: atleta.fone || '',
+      });
+      setPointIdPrincipal(atleta.pointIdPrincipal || '');
+      setPointIdsFrequentes(atleta.arenasFrequentes?.map(a => a.id) || []);
+      setErro('');
+      carregarArenas();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, atleta?.id]);
+
+  const carregarArenas = async () => {
+    try {
+      setCarregandoArenas(true);
+      const data = await userArenaService.listar();
+      setPoints(data);
+    } catch (error) {
+      console.error('Erro ao carregar arenas:', error);
+    } finally {
+      setCarregandoArenas(false);
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    setErro('');
+  };
+
+  const handleToggleArenaFrequente = (pointId: string) => {
+    setPointIdsFrequentes((prev) => {
+      if (prev.includes(pointId)) {
+        // Se já está selecionada e é a principal, não pode remover
+        if (pointIdPrincipal === pointId) {
+          setErro('Não é possível remover a arena principal das arenas frequentes.');
+          return prev;
+        }
+        return prev.filter((id) => id !== pointId);
+      } else {
+        return [...prev, pointId];
+      }
+    });
+    setErro('');
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErro('');
+    setSalvando(true);
+
+    // Se selecionou uma arena principal, garantir que ela está nas frequentes
+    const arenasFrequentes = pointIdPrincipal && !pointIdsFrequentes.includes(pointIdPrincipal)
+      ? [...pointIdsFrequentes, pointIdPrincipal]
+      : pointIdsFrequentes;
+
+    const payload = {
+      nome: form.nome,
+      dataNascimento: form.dataNascimento,
+      genero: form.genero ? form.genero.toUpperCase() : null,
+      categoria: form.categoria || null,
+      fone: form.fone || null,
+      pointIdPrincipal: pointIdPrincipal || null,
+      pointIdsFrequentes: arenasFrequentes,
+    };
+
+    try {
+      await userAtletaService.atualizar(payload);
+      onSuccess();
+    } catch (error: any) {
+      console.error('Erro ao atualizar atleta:', error);
+      setErro(error?.response?.data?.mensagem || error?.data?.mensagem || error?.message || 'Erro ao salvar alterações. Tente novamente.');
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg p-6 relative max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <button
+          className="absolute top-2 right-2 text-gray-600 hover:text-black text-lg font-bold"
+          onClick={onClose}
+          disabled={salvando}
+        >
+          ✕
+        </button>
+        <h3 className="text-xl font-semibold mb-4">Editar Dados do Atleta</h3>
+        
+        {erro && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            {erro}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block font-semibold mb-1">Nome completo</label>
+            <input
+              type="text"
+              name="nome"
+              placeholder="Nome completo"
+              value={form.nome}
+              onChange={handleChange}
+              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              required
+              disabled={salvando}
+            />
+          </div>
+
+          <div>
+            <label className="block font-semibold mb-1">Data de Nascimento</label>
+            <input
+              type="date"
+              name="dataNascimento"
+              value={form.dataNascimento}
+              onChange={handleChange}
+              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              required
+              disabled={salvando}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block font-semibold mb-1">Gênero</label>
+              <select
+                name="genero"
+                value={form.genero}
+                onChange={handleChange}
+                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                required
+                disabled={salvando}
+              >
+                <option value="">Selecione o gênero</option>
+                <option value="MASCULINO">Masculino</option>
+                <option value="FEMININO">Feminino</option>
+                <option value="OUTRO">Outro</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block font-semibold mb-1">Categoria</label>
+              <select
+                name="categoria"
+                value={form.categoria}
+                onChange={handleChange}
+                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                disabled={salvando}
+              >
+                <option value="">Selecione a categoria</option>
+                <option value="INICIANTE">INICIANTE</option>
+                <option value="D">D</option>
+                <option value="C">C</option>
+                <option value="B">B</option>
+                <option value="A">A</option>
+                <option value="PRO">PRO</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block font-semibold mb-1">Telefone</label>
+            <input
+              type="tel"
+              name="fone"
+              placeholder="(00) 00000-0000"
+              value={form.fone}
+              onChange={handleChange}
+              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              disabled={salvando}
+            />
+          </div>
+
+          {!carregandoArenas && points.length > 0 && (
+            <>
+              <div>
+                <label className="block font-semibold mb-2">Arena mais próxima da sua casa</label>
+                <select
+                  value={pointIdPrincipal}
+                  onChange={(e) => {
+                    setPointIdPrincipal(e.target.value);
+                    setErro('');
+                  }}
+                  className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  disabled={salvando}
+                >
+                  <option value="">Selecione a arena mais próxima</option>
+                  {points.map((point) => (
+                    <option key={point.id} value={point.id}>
+                      {point.nome}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 mt-1">Esta será a arena principal do seu perfil</p>
+              </div>
+
+              <div>
+                <label className="block font-semibold mb-2">Arenas que você frequenta</label>
+                <div className="space-y-2 max-h-48 overflow-y-auto border rounded p-2">
+                  {points.map((point) => (
+                    <label
+                      key={point.id}
+                      className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={pointIdsFrequentes.includes(point.id)}
+                        onChange={() => handleToggleArenaFrequente(point.id)}
+                        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                        disabled={salvando}
+                      />
+                      <div className="flex items-center gap-2 flex-1">
+                        {point.logoUrl && (
+                          <img
+                            src={point.logoUrl}
+                            alt={`Logo ${point.nome}`}
+                            className="w-6 h-6 object-contain rounded"
+                          />
+                        )}
+                        <span className="text-sm">{point.nome}</span>
+                        {pointIdPrincipal === point.id && (
+                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
+                            Principal
+                          </span>
+                        )}
+                      </div>
+                    </label>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Selecione todas as arenas onde você costuma jogar
+                </p>
+              </div>
+            </>
+          )}
+
+          {carregandoArenas && (
+            <div className="text-sm text-gray-500">Carregando arenas...</div>
+          )}
+
+          <div className="flex gap-3 pt-4">
+            <button
+              type="submit"
+              disabled={salvando}
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold"
+            >
+              {salvando ? 'Salvando...' : 'Salvar Alterações'}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={salvando}
+              className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
+              Cancelar
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
@@ -464,28 +760,16 @@ export default function AtletaPerfilPage() {
         </div>
       )}
 
-      {modalEditarAtleta && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 relative max-w-md w-full">
-            <button
-              className="absolute top-2 right-2 text-gray-600 hover:text-black text-lg"
-              onClick={() => setModalEditarAtleta(false)}
-            >
-              ✕
-            </button>
-            <h3 className="text-lg font-semibold mb-4">Editar Dados do Atleta</h3>
-            <p className="text-gray-600 mb-4">Modal será implementado em breve...</p>
-            <button
-              onClick={() => {
-                setModalEditarAtleta(false);
-                fetchAtleta();
-              }}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            >
-              Fechar
-            </button>
-          </div>
-        </div>
+      {modalEditarAtleta && atleta && (
+        <ModalEditarAtleta
+          isOpen={modalEditarAtleta}
+          atleta={atleta}
+          onClose={() => setModalEditarAtleta(false)}
+          onSuccess={() => {
+            setModalEditarAtleta(false);
+            fetchAtleta();
+          }}
+        />
       )}
 
       {modalEditarFoto && (
