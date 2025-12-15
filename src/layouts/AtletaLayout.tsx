@@ -2,18 +2,21 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { Menu as MenuIcon, X } from 'lucide-react';
 
 export default function AtletaLayout({ children }: { children: React.ReactNode }) {
   const { usuario, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const [menuAberto, setMenuAberto] = useState(false);
 
   const navItems = [
     { to: '/app/atleta/agendamentos', label: 'Agendamentos' },
     { to: '/app/atleta/jogos', label: 'Meus Jogos' },
+    { to: '/app/atleta/consumo', label: 'Meu Consumo' },
     { to: '/app/atleta/dashboard', label: 'Dashboard' },
     { to: '/app/atleta/perfil', label: 'Meu Perfil' },
   ];
@@ -23,60 +26,70 @@ export default function AtletaLayout({ children }: { children: React.ReactNode }
     router.push('/login');
   };
 
+  const isActive = (to: string) =>
+    pathname === to || pathname.startsWith(to + '/');
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <header className="bg-white shadow-md">
+      <header className="bg-white shadow-md sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="text-xl font-bold text-blue-600">Play Na Quadra</span>
-            <span className="text-xs px-2 py-1 rounded-full bg-blue-50 text-blue-700 font-semibold">
+            <span className="text-lg sm:text-xl font-bold text-blue-600">Play Na Quadra</span>
+            <span className="hidden sm:inline text-xs px-2 py-1 rounded-full bg-blue-50 text-blue-700 font-semibold">
               Área do Atleta
             </span>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             {usuario && (
-              <span className="hidden sm:inline text-sm text-gray-600">
+              <span className="hidden sm:inline text-xs text-gray-600 max-w-[200px] truncate">
                 {usuario.name || usuario.nome} ({usuario.email})
               </span>
             )}
             <button
-              onClick={handleLogout}
-              className="px-3 py-1.5 rounded-md bg-red-600 text-white text-sm font-medium hover:bg-red-700"
+              onClick={() => setMenuAberto((v) => !v)}
+              className="inline-flex items-center justify-center p-2 rounded-md text-gray-700 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
             >
-              Sair
+              <span className="sr-only">Abrir menu</span>
+              {menuAberto ? <X className="w-6 h-6" /> : <MenuIcon className="w-6 h-6" />}
             </button>
           </div>
         </div>
-        <nav className="bg-blue-50 border-t border-blue-100">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex gap-4 overflow-x-auto">
-            {navItems.map((item) => {
-              const isActive = pathname === item.to || pathname.startsWith(item.to + '/');
-              return (
+        {menuAberto && (
+          <nav className="bg-white border-t border-gray-100 shadow-md">
+            <div className="max-w-7xl mx-auto px-4 py-2 space-y-1">
+              {navItems.map((item) => (
                 <Link
                   key={item.to}
                   href={item.to}
-                  className={`px-3 py-2 text-sm font-medium border-b-2 ${
-                    isActive
-                      ? 'border-blue-600 text-blue-700'
-                      : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-blue-300'
+                  onClick={() => setMenuAberto(false)}
+                  className={`block px-3 py-2 rounded-md text-sm font-medium ${
+                    isActive(item.to)
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
                   }`}
                 >
                   {item.label}
                 </Link>
-              );
-            })}
-          </div>
-        </nav>
+              ))}
+              <button
+                onClick={() => {
+                  setMenuAberto(false);
+                  handleLogout();
+                }}
+                className="w-full text-left px-3 py-2 rounded-md text-sm font-medium text-red-600 hover:bg-red-50"
+              >
+                Sair
+              </button>
+            </div>
+          </nav>
+        )}
       </header>
 
       <main className="py-6 px-4">
-        <div className="max-w-7xl mx-auto">
-          {children}
-        </div>
+        <div className="max-w-7xl mx-auto">{children}</div>
       </main>
     </div>
   );
 }
-
 
 
