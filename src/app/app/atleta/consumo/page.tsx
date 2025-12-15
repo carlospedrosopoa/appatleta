@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { consumoService, type CardClienteConsumo, type StatusCard } from '@/services/consumoService';
-import { Calendar, CreditCard, MapPin, Clock, CheckCircle, XCircle, ShoppingCart, DollarSign, ChevronDown, ChevronUp } from 'lucide-react';
+import { Calendar, CreditCard, MapPin, Clock, CheckCircle, XCircle, ShoppingCart, DollarSign, ChevronDown, ChevronUp, FileText } from 'lucide-react';
 
 export default function MeuConsumoPage() {
   const { authReady, usuario } = useAuth();
