@@ -250,9 +250,9 @@ function ModalEditarAtleta({ isOpen, atleta, onClose, onSuccess }: ModalEditarAt
     const payload = {
       nome: form.nome,
       dataNascimento: form.dataNascimento,
-      genero: form.genero ? form.genero.toUpperCase() : null,
-      categoria: form.categoria || null,
-      fone: form.fone || null,
+      genero: form.genero ? form.genero.toUpperCase() : undefined,
+      categoria: form.categoria || undefined,
+      fone: form.fone || undefined,
       pointIdPrincipal: pointIdPrincipal || null,
       pointIdsFrequentes: arenasFrequentes,
     };
