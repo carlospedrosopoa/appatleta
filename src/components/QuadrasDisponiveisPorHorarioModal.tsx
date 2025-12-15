@@ -74,7 +74,7 @@ export default function QuadrasDisponiveisPorHorarioModal({
         return;
       }
 
-      // Buscar agendamentos e bloqueios para o dia inteiro
+      // Buscar agendamentos e bloqueios para o dia inteiro (sem depender de timezone)
       const dataInicioDia = `${data}T00:00:00`;
       const dataFimDia = `${data}T23:59:59`;
 
@@ -96,17 +96,11 @@ export default function QuadrasDisponiveisPorHorarioModal({
 
       for (const horaStr of slots) {
         const [hStr, mStr] = horaStr.split(':');
-        const ano = parseInt(data.split('-')[0], 10);
-        const mes = parseInt(data.split('-')[1], 10) - 1;
-        const dia = parseInt(data.split('-')[2], 10);
-        const h = parseInt(hStr, 10);
-        const m = parseInt(mStr, 10);
-
-        const inicio = new Date(ano, mes, dia, h, m, 0);
-        const fim = new Date(inicio.getTime() + duracao * 60000);
+        const slotInicioMin = parseInt(hStr, 10) * 60 + parseInt(mStr, 10);
+        const slotFimMin = slotInicioMin + duracao;
 
         const existeQuadraLivre = quadrasAtivas.some((quadra) =>
-          quadraEstaLivreNoHorario(quadra, inicio, fim, agendamentosDia, bloqueiosDia, duracao),
+          quadraEstaLivreNoHorario(quadra, slotInicioMin, slotFimMin, agendamentosDia, bloqueiosDia, duracao),
         );
 
         if (existeQuadraLivre) {
@@ -125,58 +119,53 @@ export default function QuadrasDisponiveisPorHorarioModal({
 
   const quadraEstaLivreNoHorario = (
     quadra: Quadra,
-    inicio: Date,
-    fim: Date,
+    slotInicioMin: number,
+    slotFimMin: number,
     agendamentos: Agendamento[],
     bloqueios: BloqueioAgenda[],
     duracaoMin: number,
   ): boolean => {
-    const temAgendamento = agendamentos.some((ag) => {
-      if (ag.quadraId !== quadra.id) return false;
-      const agInicio = new Date(ag.dataHora);
-      const agFim = new Date(agInicio.getTime() + ag.duracao * 60000);
+    const diaStr = data;
 
-      return (
-        (agInicio >= inicio && agInicio < fim) ||
-        (agFim > inicio && agFim <= fim) ||
-        (agInicio <= inicio && agFim >= fim)
-      );
+    // Verificar conflito com agendamentos usando apenas data + minutos (sem Date/Timezone)
+    const temAgendamento = agendamentos.some((ag) => {
+      if (ag.quadraId !== quadra.id || !ag.dataHora) return false;
+      const [dataPart, horaPart] = ag.dataHora.split('T');
+      if (dataPart !== diaStr) return false;
+
+      const [hStr, mStr] = horaPart.substring(0, 5).split(':');
+      const agInicioMin = parseInt(hStr, 10) * 60 + parseInt(mStr, 10);
+      const agFimMin = agInicioMin + ag.duracao;
+
+      return !(slotFimMin <= agInicioMin || slotInicioMin >= agFimMin);
     });
 
     if (temAgendamento) return false;
 
-    const horaMinutos = inicio.getHours() * 60 + inicio.getMinutes();
-
+    // Verificar conflito com bloqueios, também em minutos
     const temBloqueio = bloqueios.some((bloqueio) => {
       if (!bloqueio.ativo) return false;
 
       const afetaQuadra =
         bloqueio.quadraIds === null ? quadra.pointId === bloqueio.pointId : bloqueio.quadraIds.includes(quadra.id);
-
       if (!afetaQuadra) return false;
 
-      const bloqueioInicio = new Date(bloqueio.dataInicio);
-      const bloqueioFim = new Date(bloqueio.dataFim);
+      const inicioBloqueioDia = bloqueio.dataInicio.slice(0, 10);
+      const fimBloqueioDia = bloqueio.dataFim.slice(0, 10);
+      if (diaStr < inicioBloqueioDia || diaStr > fimBloqueioDia) return false;
 
-      if (fim <= bloqueioInicio || inicio >= bloqueioFim) {
-        return false;
-      }
+      // Sem horário específico: dia inteiro bloqueado
+      if (bloqueio.horaInicio == null && bloqueio.horaFim == null) return true;
 
-      if (
-        bloqueio.horaInicio !== null &&
-        bloqueio.horaInicio !== undefined &&
-        bloqueio.horaFim !== null &&
-        bloqueio.horaFim !== undefined
-      ) {
-        const minutosInicio = horaMinutos;
-        const minutosFim = minutosInicio + duracaoMin;
-        return !(minutosFim <= bloqueio.horaInicio || minutosInicio >= bloqueio.horaFim);
-      }
+      const bloqueioInicioMin = bloqueio.horaInicio ?? 0;
+      const bloqueioFimMin = bloqueio.horaFim ?? 24 * 60;
 
-      return true;
+      return !(slotFimMin <= bloqueioInicioMin || slotInicioMin >= bloqueioFimMin);
     });
 
-    return !temBloqueio;
+    if (temBloqueio) return false;
+
+    return true;
   };
 
   if (!isOpen) return null;
