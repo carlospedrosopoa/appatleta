@@ -1265,11 +1265,12 @@ export default function EditarAgendamentoModal({
                   <div>
                     <span className="text-blue-700">Data: </span>
                     <span className="text-blue-900 font-semibold">
-                      {new Date(data).toLocaleDateString('pt-BR', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric',
-                      })}
+                      {(() => {
+                        const dataStr = data || dataInicial || '';
+                        if (!dataStr) return '-';
+                        const [ano, mes, dia] = dataStr.split('-');
+                        return `${dia}/${mes}/${ano}`;
+                      })()}
                     </span>
                   </div>
                   <div>
