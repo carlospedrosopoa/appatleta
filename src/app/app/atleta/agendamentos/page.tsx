@@ -4,11 +4,12 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { agendamentoService } from '@/services/agendamentoService';
+import { agendamentoService, quadraService } from '@/services/agendamentoService';
 import { userArenaService, userAtletaService, type Arena } from '@/services/userAtletaService';
 import EditarAgendamentoModal from '@/components/EditarAgendamentoModal';
+import QuadrasDisponiveisPorHorarioModal from '@/components/QuadrasDisponiveisPorHorarioModal';
 import ConfirmarCancelamentoRecorrenteModal from '@/components/ConfirmarCancelamentoRecorrenteModal';
-import type { Agendamento, StatusAgendamento } from '@/types/agendamento';
+import type { Agendamento, StatusAgendamento, Quadra } from '@/types/agendamento';
 import { Calendar, Clock, MapPin, Plus, X, CheckCircle, XCircle, CalendarCheck, User, Users, UserPlus, Edit, ChevronDown, ChevronUp } from 'lucide-react';
 
 export default function AgendamentosPage() {
@@ -28,6 +29,9 @@ export default function AgendamentosPage() {
   const [modalCancelarAberto, setModalCancelarAberto] = useState(false);
   const [agendamentoCancelando, setAgendamentoCancelando] = useState<Agendamento | null>(null);
   const [meuPerfilAtleta, setMeuPerfilAtleta] = useState<any>(null);
+  const [modalHorariosAberto, setModalHorariosAberto] = useState(false);
+  const [quadrasParaHorario, setQuadrasParaHorario] = useState<Quadra[]>([]);
+  const [carregandoHorarios, setCarregandoHorarios] = useState(false);
 
   useEffect(() => {
     carregarDados();
@@ -138,6 +142,39 @@ export default function AgendamentosPage() {
     } catch (error: any) {
       alert(error?.response?.data?.mensagem || 'Erro ao cancelar agendamento');
     }
+  };
+
+  const abrirHorariosDisponiveis = async () => {
+    if (!dataAgendamento) {
+      alert('Por favor, selecione a data antes de ver horários disponíveis.');
+      return;
+    }
+    try {
+      setCarregandoHorarios(true);
+      // Buscar todas as quadras e filtrar pelas arenas que o atleta tem acesso
+      const todasQuadras = await quadraService.listar();
+      const quadrasFiltradas =
+        points.length > 0
+          ? todasQuadras.filter((q) => points.some((p) => p.id === q.pointId && p.assinante))
+          : todasQuadras;
+      setQuadrasParaHorario(quadrasFiltradas);
+      setModalHorariosAberto(true);
+    } catch (error) {
+      console.error('Erro ao carregar quadras para horários disponíveis:', error);
+      alert('Erro ao carregar quadras para horários disponíveis.');
+    } finally {
+      setCarregandoHorarios(false);
+    }
+  };
+
+  const handleSelecionarQuadraHorario = (quadraId: string, dataSel: string, horaSel: string) => {
+    // Preenche o formulário com data/hora escolhidos e abre o modal de agendamento já com a quadra
+    setDataAgendamento(dataSel);
+    setHoraAgendamento(horaSel);
+    setAgendamentoEditando(null);
+    setDuracaoAgendamento(60);
+    setModalHorariosAberto(false);
+    setModalEditarAberto(true);
   };
 
   const getStatusBadge = (status: StatusAgendamento) => {
@@ -284,6 +321,14 @@ export default function AgendamentosPage() {
             >
               <Plus className="w-4 h-4" />
               Buscar Quadra
+            </button>
+            <button
+              type="button"
+              onClick={abrirHorariosDisponiveis}
+              disabled={carregandoHorarios}
+              className="mt-2 w-full text-xs text-blue-700 hover:text-blue-900 underline disabled:text-gray-400"
+            >
+              {carregandoHorarios ? 'Carregando horários...' : 'Ver horários disponíveis na data'}
             </button>
           </div>
         </div>
@@ -577,6 +622,17 @@ export default function AgendamentosPage() {
         onCancelarAgendamento={(agendamento) => {
           handleCancelar(agendamento);
         }}
+      />
+
+      {/* Modal de Horários Disponíveis */}
+      <QuadrasDisponiveisPorHorarioModal
+        isOpen={modalHorariosAberto}
+        onClose={() => setModalHorariosAberto(false)}
+        quadras={quadrasParaHorario}
+        dataInicial={dataAgendamento || undefined}
+        horaInicial={horaAgendamento || undefined}
+        duracaoInicial={duracaoAgendamento}
+        onSelecionarQuadra={handleSelecionarQuadraHorario}
       />
 
       {/* Modal de Confirmação de Cancelamento */}
