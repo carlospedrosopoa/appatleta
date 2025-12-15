@@ -612,6 +612,7 @@ export default function AgendamentosPage() {
         dataInicial={dataAgendamento || undefined}
         duracaoInicial={duracaoAgendamento}
         onSelecionarHorario={handleSelecionarHorario}
+        pointIdsPermitidos={points.map((p) => p.id)}
       />
 
       {/* Modal de Confirmação de Cancelamento */}

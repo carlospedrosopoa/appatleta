@@ -13,6 +13,7 @@ interface QuadrasDisponiveisPorHorarioModalProps {
   dataInicial?: string;
   duracaoInicial?: number;
   onSelecionarHorario: (data: string, hora: string, duracao: number) => void;
+  pointIdsPermitidos?: string[];
 }
 
 const INICIO_DIA_MINUTOS = 6 * 60; // 06:00
@@ -25,6 +26,7 @@ export default function QuadrasDisponiveisPorHorarioModal({
   dataInicial,
   duracaoInicial,
   onSelecionarHorario,
+  pointIdsPermitidos,
 }: QuadrasDisponiveisPorHorarioModalProps) {
   const [data, setData] = useState('');
   const [duracao, setDuracao] = useState(60);
@@ -61,9 +63,12 @@ export default function QuadrasDisponiveisPorHorarioModal({
     setHorariosDisponiveis([]);
 
     try {
-      // Carrega todas as quadras ativas
+      // Carrega todas as quadras ativas, filtrando pelas arenas permitidas
       const todasQuadras = await quadraService.listar();
-      const quadrasAtivas = todasQuadras.filter((q) => q.ativo);
+      let quadrasAtivas = todasQuadras.filter((q) => q.ativo);
+      if (pointIdsPermitidos && pointIdsPermitidos.length > 0) {
+        quadrasAtivas = quadrasAtivas.filter((q) => pointIdsPermitidos.includes(q.pointId));
+      }
       if (quadrasAtivas.length === 0) {
         setHorariosDisponiveis([]);
         return;
