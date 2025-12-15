@@ -174,6 +174,9 @@ function ModalEditarUsuario({ isOpen, usuario, onClose, onSuccess }: ModalEditar
   const [senhaAtual, setSenhaAtual] = useState('');
   const [novaSenha, setNovaSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
+  const [mostrarSenhaAtual, setMostrarSenhaAtual] = useState(false);
+  const [mostrarNovaSenha, setMostrarNovaSenha] = useState(false);
+  const [mostrarConfirmarSenha, setMostrarConfirmarSenha] = useState(false);
   const [erro, setErro] = useState('');
   const [salvando, setSalvando] = useState(false);
 
@@ -183,6 +186,9 @@ function ModalEditarUsuario({ isOpen, usuario, onClose, onSuccess }: ModalEditar
       setSenhaAtual('');
       setNovaSenha('');
       setConfirmarSenha('');
+      setMostrarSenhaAtual(false);
+      setMostrarNovaSenha(false);
+      setMostrarConfirmarSenha(false);
       setErro('');
     }
   }, [isOpen, usuario]);
@@ -281,34 +287,64 @@ function ModalEditarUsuario({ isOpen, usuario, onClose, onSuccess }: ModalEditar
             <label className="block font-semibold">Alterar senha (opcional)</label>
             <div>
               <label className="block text-sm text-gray-600 mb-1">Senha atual</label>
-              <input
-                type="password"
-                value={senhaAtual}
-                onChange={(e) => setSenhaAtual(e.target.value)}
-                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                disabled={salvando}
-                placeholder="Necessária para trocar a senha"
-              />
+              <div className="relative">
+                <input
+                  type={mostrarSenhaAtual ? 'text' : 'password'}
+                  value={senhaAtual}
+                  onChange={(e) => setSenhaAtual(e.target.value)}
+                  className="w-full p-2 pr-20 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  disabled={salvando}
+                  placeholder="Necessária para trocar a senha"
+                />
+                <button
+                  type="button"
+                  onClick={() => setMostrarSenhaAtual((v) => !v)}
+                  className="absolute inset-y-0 right-2 my-1 px-2 text-xs font-medium text-gray-600 bg-gray-100 rounded hover:bg-gray-200"
+                  disabled={salvando}
+                >
+                  {mostrarSenhaAtual ? 'Ocultar' : 'Mostrar'}
+                </button>
+              </div>
             </div>
             <div>
               <label className="block text-sm text-gray-600 mb-1">Nova senha</label>
-              <input
-                type="password"
-                value={novaSenha}
-                onChange={(e) => setNovaSenha(e.target.value)}
-                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                disabled={salvando}
-              />
+              <div className="relative">
+                <input
+                  type={mostrarNovaSenha ? 'text' : 'password'}
+                  value={novaSenha}
+                  onChange={(e) => setNovaSenha(e.target.value)}
+                  className="w-full p-2 pr-20 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  disabled={salvando}
+                />
+                <button
+                  type="button"
+                  onClick={() => setMostrarNovaSenha((v) => !v)}
+                  className="absolute inset-y-0 right-2 my-1 px-2 text-xs font-medium text-gray-600 bg-gray-100 rounded hover:bg-gray-200"
+                  disabled={salvando}
+                >
+                  {mostrarNovaSenha ? 'Ocultar' : 'Mostrar'}
+                </button>
+              </div>
             </div>
             <div>
               <label className="block text-sm text-gray-600 mb-1">Confirmar nova senha</label>
-              <input
-                type="password"
-                value={confirmarSenha}
-                onChange={(e) => setConfirmarSenha(e.target.value)}
-                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                disabled={salvando}
-              />
+              <div className="relative">
+                <input
+                  type={mostrarConfirmarSenha ? 'text' : 'password'}
+                  value={confirmarSenha}
+                  onChange={(e) => setConfirmarSenha(e.target.value)}
+                  className="w-full p-2 pr-20 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  disabled={salvando}
+                />
+                <button
+                  type="button"
+                  onClick={() => setMostrarConfirmarSenha((v) => !v)}
+                  className="absolute inset-y-0 right-2 my-1 px-2 text-xs font-medium text-gray-600 bg-gray-100 rounded hover:bg-gray-200"
+                  disabled={salvando}
+                >
+                  {mostrarConfirmarSenha ? 'Ocultar' : 'Mostrar'}
+                </button>
+              </div>
             </div>
           </div>
 
