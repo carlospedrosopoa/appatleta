@@ -7,6 +7,7 @@ export interface CardClienteConsumo {
   id: string;
   pointId: string;
   pointNome: string;
+  pointLogoUrl?: string | null;
   numeroCard: number;
   status: StatusCard;
   observacoes?: string | null;

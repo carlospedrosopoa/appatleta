@@ -124,51 +124,74 @@ export default function MeuConsumoPage() {
                   key={card.id}
                   className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow"
                 >
-                  {/* Linha compacta */}
+                  {/* Cabeçalho compacto com logo, número do card, data/hora e status */}
                   <button
                     type="button"
                     onClick={() => setCardExpandido(isExpandido ? null : card.id)}
-                    className="w-full flex items-center justify-between px-4 py-3 gap-4"
+                    className="w-full flex flex-col gap-2 px-4 py-3"
                   >
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className="flex-shrink-0 w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center">
-                        <CreditCard className="w-4 h-4 text-blue-600" />
-                      </div>
-                      <div className="flex-1 min-w-0 text-left">
-                        <div className="flex items-center gap-2 text-sm font-semibold text-gray-900">
-                          <span>Card #{card.numeroCard}</span>
-                          {getStatusBadge(card.status)}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="flex-shrink-0 w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center overflow-hidden">
+                          {card.pointLogoUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={card.pointLogoUrl}
+                              alt={card.pointNome}
+                              className="w-9 h-9 object-contain"
+                            />
+                          ) : (
+                            <CreditCard className="w-4 h-4 text-blue-600" />
+                          )}
                         </div>
-                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-gray-600">
-                          <span className="flex items-center gap-1">
+                        <div className="min-w-0">
+                          <div className="text-sm font-semibold text-gray-900">
+                            Card #{card.numeroCard}
+                          </div>
+                          <div className="flex items-center gap-1 text-xs text-gray-500">
                             <MapPin className="w-3 h-3" />
-                            {card.pointNome}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />
-                            {formatarDataHora(card.createdAt)}
-                          </span>
+                            <span className="truncate max-w-[160px]">{card.pointNome}</span>
+                          </div>
                         </div>
                       </div>
+                      <div className="flex flex-col items-end text-[11px] text-gray-600">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          {formatarDataHora(card.createdAt)}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex flex-col items-end gap-1 text-xs">
-                      <span className="flex items-center gap-1 text-gray-700">
-                        <DollarSign className="w-3 h-3" />
-                        Total: <span className="font-semibold">{formatarMoeda(card.valorTotal)}</span>
-                      </span>
-                      <span className="flex items-center gap-1 text-gray-700">
-                        Pago: <span className="font-semibold">{formatarMoeda(totalPago)}</span>
-                      </span>
-                      <span
-                        className={`flex items-center gap-1 font-semibold ${
-                          saldo > 0 ? 'text-red-600' : 'text-emerald-600'
-                        }`}
-                      >
-                        Saldo: {formatarMoeda(saldo)}
-                      </span>
-                    </div>
-                    <div className="flex-shrink-0 text-gray-400">
-                      {isExpandido ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+
+                    <div className="flex items-end justify-between gap-3 text-xs mt-1">
+                      <div className="flex flex-col gap-0.5 text-gray-700">
+                        <span className="flex items-center gap-1">
+                          <DollarSign className="w-3 h-3" />
+                          Total:{' '}
+                          <span className="font-semibold">{formatarMoeda(card.valorTotal)}</span>
+                        </span>
+                        <span>
+                          Pago:{' '}
+                          <span className="font-semibold">{formatarMoeda(totalPago)}</span>
+                        </span>
+                        <span
+                          className={`font-semibold ${
+                            saldo > 0 ? 'text-red-600' : 'text-emerald-600'
+                          }`}
+                        >
+                          Saldo: {formatarMoeda(saldo)}
+                        </span>
+                      </div>
+                      <div className="flex flex-col items-end gap-1">
+                        {/* Status na última linha, alinhado à direita */}
+                        {getStatusBadge(card.status)}
+                        <div className="text-gray-400">
+                          {isExpandido ? (
+                            <ChevronUp className="w-4 h-4" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4" />
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </button>
 
