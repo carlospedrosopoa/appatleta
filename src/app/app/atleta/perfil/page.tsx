@@ -474,6 +474,12 @@ interface Atleta {
   fotoUrl?: string;
   fone?: string;
   usuarioId: string;
+  pointIdPrincipal?: string | null;
+  arenasFrequentes?: Array<{
+    id: string;
+    nome: string;
+    logoUrl?: string | null;
+  }>;
 }
 
 export default function AtletaPerfilPage() {
