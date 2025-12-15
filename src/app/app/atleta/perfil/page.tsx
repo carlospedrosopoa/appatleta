@@ -162,6 +162,179 @@ function ModalEditarFoto({ isOpen, atletaId, fotoAtual, onClose, onSuccess }: Mo
   );
 }
 
+interface ModalEditarUsuarioProps {
+  isOpen: boolean;
+  usuario: Usuario;
+  onClose: () => void;
+  onSuccess: (novoNome: string) => void;
+}
+
+function ModalEditarUsuario({ isOpen, usuario, onClose, onSuccess }: ModalEditarUsuarioProps) {
+  const [nome, setNome] = useState(usuario.name);
+  const [senhaAtual, setSenhaAtual] = useState('');
+  const [novaSenha, setNovaSenha] = useState('');
+  const [confirmarSenha, setConfirmarSenha] = useState('');
+  const [erro, setErro] = useState('');
+  const [salvando, setSalvando] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setNome(usuario.name);
+      setSenhaAtual('');
+      setNovaSenha('');
+      setConfirmarSenha('');
+      setErro('');
+    }
+  }, [isOpen, usuario]);
+
+  const handleSalvar = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErro('');
+
+    if (!nome.trim()) {
+      setErro('Informe o nome.');
+      return;
+    }
+
+    const querTrocarSenha = novaSenha.trim().length > 0 || confirmarSenha.trim().length > 0;
+    if (querTrocarSenha) {
+      if (novaSenha.length < 6) {
+        setErro('A nova senha deve ter pelo menos 6 caracteres.');
+        return;
+      }
+      if (novaSenha !== confirmarSenha) {
+        setErro('A confirmação de senha não confere.');
+        return;
+      }
+      if (!senhaAtual) {
+        setErro('Informe a senha atual para alterar a senha.');
+        return;
+      }
+    }
+
+    try {
+      setSalvando(true);
+
+      // Se vai trocar a senha, validar a senha atual autenticando
+      if (querTrocarSenha) {
+        await api.post('/auth/login', {
+          email: usuario.email,
+          password: senhaAtual,
+        });
+      }
+
+      await api.put('/user/perfil', {
+        name: nome.trim(),
+        password: querTrocarSenha ? novaSenha : undefined,
+      });
+
+      onSuccess(nome.trim());
+      onClose();
+    } catch (error: any) {
+      console.error('Erro ao atualizar usuário:', error);
+      const mensagem =
+        error?.response?.data?.mensagem ||
+        error?.data?.mensagem ||
+        (error?.response?.status === 401
+          ? 'Senha atual incorreta.'
+          : 'Erro ao salvar. Tente novamente.');
+      setErro(mensagem);
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg p-6 relative max-w-md w-full">
+        <button
+          className="absolute top-2 right-2 text-gray-600 hover:text-black text-lg font-bold"
+          onClick={onClose}
+          disabled={salvando}
+        >
+          ✕
+        </button>
+        <h3 className="text-xl font-semibold mb-4">Editar Dados de Usuário</h3>
+
+        {erro && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            {erro}
+          </div>
+        )}
+
+        <form onSubmit={handleSalvar} className="space-y-4">
+          <div>
+            <label className="block font-semibold mb-1">Nome</label>
+            <input
+              type="text"
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
+              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              disabled={salvando}
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="block font-semibold">Alterar senha (opcional)</label>
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">Senha atual</label>
+              <input
+                type="password"
+                value={senhaAtual}
+                onChange={(e) => setSenhaAtual(e.target.value)}
+                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                disabled={salvando}
+                placeholder="Necessária para trocar a senha"
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">Nova senha</label>
+              <input
+                type="password"
+                value={novaSenha}
+                onChange={(e) => setNovaSenha(e.target.value)}
+                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                disabled={salvando}
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">Confirmar nova senha</label>
+              <input
+                type="password"
+                value={confirmarSenha}
+                onChange={(e) => setConfirmarSenha(e.target.value)}
+                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                disabled={salvando}
+              />
+            </div>
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <button
+              type="submit"
+              disabled={salvando}
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold"
+            >
+              {salvando ? 'Salvando...' : 'Salvar'}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={salvando}
+              className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 interface ModalEditarAtletaProps {
   isOpen: boolean;
   atleta: Atleta;
@@ -741,29 +914,17 @@ export default function AtletaPerfilPage() {
         </div>
       </div>
 
-      {/* Modais - Placeholders */}
-      {modalEditarUsuario && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 relative max-w-md w-full">
-            <button
-              className="absolute top-2 right-2 text-gray-600 hover:text-black text-lg"
-              onClick={() => setModalEditarUsuario(false)}
-            >
-              ✕
-            </button>
-            <h3 className="text-lg font-semibold mb-4">Editar Dados do Usuário</h3>
-            <p className="text-gray-600 mb-4">Modal será implementado em breve...</p>
-            <button
-              onClick={() => {
-                setModalEditarUsuario(false);
-                fetchUsuario();
-              }}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            >
-              Fechar
-            </button>
-          </div>
-        </div>
+      {/* Modal editar usuário */}
+      {modalEditarUsuario && usuario && (
+        <ModalEditarUsuario
+          isOpen={modalEditarUsuario}
+          usuario={usuario}
+          onClose={() => setModalEditarUsuario(false)}
+          onSuccess={(novoNome) => {
+            setUsuario((prev) => (prev ? { ...prev, name: novoNome } : prev));
+            fetchUsuario();
+          }}
+        />
       )}
 
       {modalEditarAtleta && atleta && (
