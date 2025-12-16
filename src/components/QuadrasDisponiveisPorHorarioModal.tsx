@@ -29,7 +29,7 @@ export default function QuadrasDisponiveisPorHorarioModal({
   pointIdsPermitidos,
 }: QuadrasDisponiveisPorHorarioModalProps) {
   const [data, setData] = useState('');
-  const [duracao, setDuracao] = useState(60);
+  const [duracao, setDuracao] = useState(90);
   const [carregando, setCarregando] = useState(false);
   const [horariosDisponiveis, setHorariosDisponiveis] = useState<string[]>([]);
 
@@ -38,7 +38,7 @@ export default function QuadrasDisponiveisPorHorarioModal({
       const hoje = new Date();
       const dataDefault = hoje.toISOString().split('T')[0];
       setData(dataInicial || dataDefault);
-      setDuracao(duracaoInicial ?? 60);
+      setDuracao(duracaoInicial ?? 90);
       setHorariosDisponiveis([]);
     }
   }, [isOpen, dataInicial, duracaoInicial]);

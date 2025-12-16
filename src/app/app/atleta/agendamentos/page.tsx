@@ -21,7 +21,7 @@ export default function AgendamentosPage() {
   const [loading, setLoading] = useState(true);
   const [dataAgendamento, setDataAgendamento] = useState('');
   const [horaAgendamento, setHoraAgendamento] = useState('');
-  const [duracaoAgendamento, setDuracaoAgendamento] = useState(60);
+  const [duracaoAgendamento, setDuracaoAgendamento] = useState(90);
   const [incluirPassados, setIncluirPassados] = useState(false);
   const [agendamentoExpandido, setAgendamentoExpandido] = useState<string | null>(null);
   const [modalEditarAberto, setModalEditarAberto] = useState(false);
