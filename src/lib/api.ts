@@ -78,8 +78,15 @@ async function apiRequest(
     });
   }
   
-  // Construir URL completa
-  const url = `${BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+  // Se endpoint começa com /api, usa rota local (não concatena com BASE_URL)
+  // Isso permite usar rotas locais do Next.js mesmo quando NEXT_PUBLIC_API_URL está configurada
+  let url: string;
+  if (endpoint.startsWith('/api/')) {
+    url = endpoint;
+  } else {
+    // Construir URL completa para API externa
+    url = `${BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+  }
   
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
