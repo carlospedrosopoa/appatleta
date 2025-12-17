@@ -33,6 +33,8 @@ export default function PreencherPerfilAtletaPage() {
   const [verificando, setVerificando] = useState(true);
   const [carregandoArenas, setCarregandoArenas] = useState(true);
   const [erro, setErro] = useState('');
+  const [atletaExistente, setAtletaExistente] = useState<any>(null);
+  const [modoEdicao, setModoEdicao] = useState(false);
 
   useEffect(() => {
     if (!authReady) return;
@@ -57,9 +59,30 @@ export default function PreencherPerfilAtletaPage() {
       try {
         const atleta = await userAtletaService.obter();
         if (atleta) {
-          // Já tem atleta, redireciona
-          router.push('/dashboard');
-          return;
+          // Já tem atleta - carregar dados para edição
+          setAtletaExistente(atleta);
+          setModoEdicao(true);
+          
+          // Preencher formulário com dados existentes
+          setForm({
+            nome: atleta.nome || '',
+            dataNascimento: atleta.dataNascimento ? atleta.dataNascimento.split('T')[0] : '',
+            genero: atleta.genero || '',
+            categoria: atleta.categoria || '',
+          });
+          
+          if (atleta.fotoUrl) {
+            setFotoPreview(atleta.fotoUrl);
+            setFotoUrl(atleta.fotoUrl);
+          }
+          
+          if (atleta.arenaPrincipal?.id) {
+            setPointIdPrincipal(atleta.arenaPrincipal.id);
+          }
+          
+          if (atleta.arenasFrequentes && atleta.arenasFrequentes.length > 0) {
+            setPointIdsFrequentes(atleta.arenasFrequentes.map((a: any) => a.id));
+          }
         }
       } catch (error: any) {
         // 204 ou 404 = não tem atleta, pode criar
@@ -134,15 +157,24 @@ export default function PreencherPerfilAtletaPage() {
     };
 
     try {
-      console.log('[CRIAR ATLETA DEBUG] Payload sendo enviado:', payload);
-      const resultado = await userAtletaService.criar(payload);
-      console.log('[CRIAR ATLETA DEBUG] Atleta criado com sucesso:', resultado);
-      router.push('/dashboard');
+      if (modoEdicao && atletaExistente) {
+        // Atualizar atleta existente
+        console.log('[ATUALIZAR ATLETA DEBUG] Payload sendo enviado:', payload);
+        const resultado = await userAtletaService.atualizar(payload);
+        console.log('[ATUALIZAR ATLETA DEBUG] Atleta atualizado com sucesso:', resultado);
+        router.push('/app/atleta/perfil');
+      } else {
+        // Criar novo atleta
+        console.log('[CRIAR ATLETA DEBUG] Payload sendo enviado:', payload);
+        const resultado = await userAtletaService.criar(payload);
+        console.log('[CRIAR ATLETA DEBUG] Atleta criado com sucesso:', resultado);
+        router.push('/dashboard');
+      }
     } catch (error: any) {
-      console.error('[CRIAR ATLETA DEBUG] Erro ao criar atleta:', error);
-      console.error('[CRIAR ATLETA DEBUG] Status:', error?.status);
-      console.error('[CRIAR ATLETA DEBUG] Response:', error?.response);
-      console.error('[CRIAR ATLETA DEBUG] Data:', error?.data);
+      console.error('[ATLETA DEBUG] Erro ao salvar atleta:', error);
+      console.error('[ATLETA DEBUG] Status:', error?.status);
+      console.error('[ATLETA DEBUG] Response:', error?.response);
+      console.error('[ATLETA DEBUG] Data:', error?.data);
       setErro(error?.response?.data?.mensagem || error?.data?.mensagem || error?.message || 'Erro ao salvar perfil. Tente novamente.');
     }
   };
@@ -157,7 +189,9 @@ export default function PreencherPerfilAtletaPage() {
 
   return (
     <div className="max-w-xl mx-auto p-4 bg-white rounded-xl shadow-md mt-10">
-      <h1 className="text-2xl font-bold mb-4">Preencha seu perfil de atleta</h1>
+      <h1 className="text-2xl font-bold mb-4">
+        {modoEdicao ? 'Editar Perfil de Atleta' : 'Preencha seu perfil de atleta'}
+      </h1>
       
       {erro && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">

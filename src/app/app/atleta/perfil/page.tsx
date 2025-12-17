@@ -746,13 +746,12 @@ export default function AtletaPerfilPage() {
 
   const fetchAtleta = async () => {
     try {
-      const res = await api.get('/atleta/me/atleta');
-      if (res.status === 204 || !res.data) {
+      // Usar a rota do frontend externo que busca atleta vinculado ao usuário autenticado
+      const atletaData = await userAtletaService.obter();
+      if (atletaData) {
+        setAtleta(atletaData);
+      } else {
         setAtleta(null);
-        return;
-      }
-      if (res.status >= 200 && res.status < 300) {
-        setAtleta(res.data);
       }
     } catch (error: any) {
       if (error?.status !== 204 && error?.status !== 404) {
@@ -938,12 +937,14 @@ export default function AtletaPerfilPage() {
                   />
                 </svg>
               </div>
-              <p className="text-gray-600 mb-4">Você ainda não cadastrou seu perfil de atleta.</p>
+              <p className="text-gray-600 mb-4">
+                {usuario ? 'Complete seu perfil de atleta com mais informações.' : 'Você ainda não cadastrou seu perfil de atleta.'}
+              </p>
               <button
                 className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
                 onClick={() => setModalAtleta(true)}
               >
-                Criar Perfil de Atleta
+                {usuario ? 'Completar Perfil de Atleta' : 'Criar Perfil de Atleta'}
               </button>
             </div>
           )}
@@ -997,8 +998,12 @@ export default function AtletaPerfilPage() {
             >
               ✕
             </button>
-            <h3 className="text-lg font-semibold mb-4">Criar Perfil de Atleta</h3>
-            <p className="text-gray-600 mb-4">Redirecionando para página de criação...</p>
+            <h3 className="text-lg font-semibold mb-4">
+              {atleta ? 'Editar Perfil de Atleta' : 'Criar Perfil de Atleta'}
+            </h3>
+            <p className="text-gray-600 mb-4">
+              {atleta ? 'Redirecionando para página de edição...' : 'Redirecionando para página de criação...'}
+            </p>
             <div className="flex gap-3">
               <button
                 onClick={() => {
@@ -1007,7 +1012,7 @@ export default function AtletaPerfilPage() {
                 }}
                 className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
               >
-                Ir para Criar Perfil
+                {atleta ? 'Ir para Editar Perfil' : 'Ir para Criar Perfil'}
               </button>
               <button
                 onClick={() => setModalAtleta(false)}
