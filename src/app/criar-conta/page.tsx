@@ -4,9 +4,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
-import { Phone, Mail, MessageSquare, Smartphone } from 'lucide-react';
+import { Phone, Mail } from 'lucide-react';
 
-type Etapa = 'telefone' | 'confirmar-email' | 'escolher-metodo' | 'verificar-codigo' | 'criar-senha';
+type Etapa = 'telefone' | 'confirmar-email' | 'criar-senha';
 
 export default function CriarContaPage() {
   const [etapa, setEtapa] = useState<Etapa>('telefone');
@@ -14,9 +14,6 @@ export default function CriarContaPage() {
   const [email, setEmail] = useState('');
   const [emailMascarado, setEmailMascarado] = useState('');
   const [emailConfirmado, setEmailConfirmado] = useState('');
-  const [metodoVerificacao, setMetodoVerificacao] = useState<'sms' | 'whatsapp' | null>(null);
-  const [codigoVerificacao, setCodigoVerificacao] = useState('');
-  const [codigoEnviado, setCodigoEnviado] = useState(false);
   const [password, setPassword] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
   const [name, setName] = useState('');
@@ -103,61 +100,8 @@ export default function CriarContaPage() {
     }
 
     setEmail(emailConfirmado);
-    setEtapa('escolher-metodo');
-  };
-
-  const handleEnviarCodigo = async () => {
-    if (!metodoVerificacao) return;
-
-    setCarregando(true);
-    setErro('');
-
-    try {
-      const telefoneNormalizado = telefone.replace(/\D/g, '');
-      
-      const { data, status } = await api.post('/user/verificacao/enviar-codigo', {
-        telefone: telefoneNormalizado,
-        metodo: metodoVerificacao,
-      });
-
-      if (status === 200) {
-        setCodigoEnviado(true);
-        setEtapa('verificar-codigo');
-      } else {
-        setErro(data.mensagem || 'Erro ao enviar código. Tente novamente.');
-      }
-    } catch (err: any) {
-      setErro(err?.response?.data?.mensagem || 'Erro ao enviar código. Tente novamente.');
-    } finally {
-      setCarregando(false);
-    }
-  };
-
-  const handleVerificarCodigo = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    setCarregando(true);
-    setErro('');
-
-    try {
-      const telefoneNormalizado = telefone.replace(/\D/g, '');
-      
-      const { data, status } = await api.post('/user/verificacao/validar-codigo', {
-        telefone: telefoneNormalizado,
-        codigo: codigoVerificacao,
-      });
-
-      if (status === 200) {
-        // Código válido - vai para criar senha
-        setEtapa('criar-senha');
-      } else {
-        setErro(data.mensagem || 'Código inválido. Tente novamente.');
-      }
-    } catch (err: any) {
-      setErro(err?.response?.data?.mensagem || 'Código inválido. Tente novamente.');
-    } finally {
-      setCarregando(false);
-    }
+    // Após confirmar email, vai direto para criar senha
+    setEtapa('criar-senha');
   };
 
   const handleCriarSenha = async (e: React.FormEvent) => {
@@ -350,160 +294,7 @@ export default function CriarContaPage() {
     );
   }
 
-  // Etapa 3: Escolher método de verificação
-  if (etapa === 'escolher-metodo') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4 py-12">
-        <div className="w-full max-w-md">
-          <div className="bg-white rounded-2xl shadow-xl p-8 sm:p-10">
-            <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Verificação</h1>
-              <p className="text-gray-600">Escolha como receber o código de verificação</p>
-              <p className="text-sm text-gray-500 mt-2">Telefone: {formatarTelefone(telefone)}</p>
-            </div>
-
-            {erro && (
-              <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                {erro}
-              </div>
-            )}
-
-            <div className="space-y-4">
-              <button
-                type="button"
-                onClick={() => {
-                  setMetodoVerificacao('whatsapp');
-                  handleEnviarCodigo();
-                }}
-                disabled={carregando}
-                className="w-full p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all flex items-center gap-4 disabled:opacity-50"
-              >
-                <MessageSquare className="w-6 h-6 text-green-600" />
-                <div className="text-left flex-1">
-                  <div className="font-semibold text-gray-900">WhatsApp</div>
-                  <div className="text-sm text-gray-500">Receber código via WhatsApp</div>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setMetodoVerificacao('sms');
-                  handleEnviarCodigo();
-                }}
-                disabled={carregando}
-                className="w-full p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all flex items-center gap-4 disabled:opacity-50"
-              >
-                <Smartphone className="w-6 h-6 text-blue-600" />
-                <div className="text-left flex-1">
-                  <div className="font-semibold text-gray-900">SMS</div>
-                  <div className="text-sm text-gray-500">Receber código via SMS</div>
-                </div>
-              </button>
-            </div>
-
-            <div className="mt-6">
-              <button
-                type="button"
-                onClick={() => {
-                  setEtapa('confirmar-email');
-                  setErro('');
-                }}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium"
-                disabled={carregando}
-              >
-                Voltar
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Etapa 4: Verificar código
-  if (etapa === 'verificar-codigo') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4 py-12">
-        <div className="w-full max-w-md">
-          <div className="bg-white rounded-2xl shadow-xl p-8 sm:p-10">
-            <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Verificar Código</h1>
-              <p className="text-gray-600">
-                Digite o código enviado via {metodoVerificacao === 'whatsapp' ? 'WhatsApp' : 'SMS'}
-              </p>
-              <p className="text-sm text-gray-500 mt-2">Telefone: {formatarTelefone(telefone)}</p>
-            </div>
-
-            {erro && (
-              <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                {erro}
-              </div>
-            )}
-
-            <form onSubmit={handleVerificarCodigo} className="space-y-5">
-              <div>
-                <label htmlFor="codigo" className="block text-sm font-medium text-gray-700 mb-2">
-                  Código de Verificação
-                </label>
-                <input
-                  id="codigo"
-                  type="text"
-                  value={codigoVerificacao}
-                  onChange={(e) => {
-                    const apenasNumeros = e.target.value.replace(/\D/g, '');
-                    if (apenasNumeros.length <= 6) {
-                      setCodigoVerificacao(apenasNumeros);
-                    }
-                  }}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all text-center text-2xl tracking-widest"
-                  placeholder="000000"
-                  maxLength={6}
-                  required
-                  disabled={carregando}
-                />
-              </div>
-
-              <div className="flex gap-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEtapa('escolher-metodo');
-                    setCodigoVerificacao('');
-                    setErro('');
-                  }}
-                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium"
-                  disabled={carregando}
-                >
-                  Voltar
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={carregando || codigoVerificacao.length !== 6}
-                >
-                  {carregando ? 'Verificando...' : 'Verificar'}
-                </button>
-              </div>
-
-              <div className="text-center">
-                <button
-                  type="button"
-                  onClick={handleEnviarCodigo}
-                  className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-                  disabled={carregando}
-                >
-                  Reenviar código
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Etapa 5: Criar senha
+  // Etapa 3: Criar senha
   if (etapa === 'criar-senha') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4 py-12">
