@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { api, setBasicCreds } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 
@@ -18,7 +18,23 @@ export default function LoginPage() {
   const [erro, setErro] = useState('');
   const [carregando, setCarregando] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login, usuario, authReady, autenticado } = useAuth();
+
+  useEffect(() => {
+    // Preencher email se vier via query parameter
+    const emailParam = searchParams.get('email');
+    if (emailParam) {
+      setEmail(emailParam);
+    }
+    
+    // Mostrar mensagem se vier via query parameter
+    const mensagem = searchParams.get('mensagem');
+    if (mensagem) {
+      // Não mostrar como erro, apenas como informação
+      // Pode ser usado para mostrar mensagens de sucesso
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (!authReady) return;

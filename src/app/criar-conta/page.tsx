@@ -67,8 +67,14 @@ export default function CriarContaPage() {
         setAtletaEncontrado(data);
         setName(data.nome || '');
         
-        // Se tem email, vai para confirmação de email
-        if (data.email) {
+        // Se já tem conta (usuarioId existe), redireciona para login
+        if (data.usuarioId && data.email) {
+          router.push(`/login?email=${encodeURIComponent(data.email)}`);
+          return;
+        }
+        
+        // Se tem email mas não tem conta (pendente), vai para confirmação de email
+        if (data.email && !data.usuarioId) {
           setEmailMascarado(mascararEmail(data.email));
           setEtapa('confirmar-email');
         } else {
