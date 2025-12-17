@@ -62,8 +62,7 @@ export default function CriarContaPage() {
     try {
       const telefoneNormalizado = telefone.replace(/\D/g, '');
       
-      // Usa rota local para criação de conta (pública)
-      const { data, status } = await api.post('/api/user/atleta/buscar-por-telefone', {
+      const { data, status } = await api.post('/user/atleta/buscar-por-telefone', {
         telefone: telefoneNormalizado,
       });
 
@@ -116,8 +115,7 @@ export default function CriarContaPage() {
     try {
       const telefoneNormalizado = telefone.replace(/\D/g, '');
       
-      // Usa rota local para criação de conta (pública)
-      const { data, status } = await api.post('/api/user/verificacao/enviar-codigo', {
+      const { data, status } = await api.post('/user/verificacao/enviar-codigo', {
         telefone: telefoneNormalizado,
         metodo: metodoVerificacao,
       });
@@ -144,8 +142,7 @@ export default function CriarContaPage() {
     try {
       const telefoneNormalizado = telefone.replace(/\D/g, '');
       
-      // Usa rota local para criação de conta (pública)
-      const { data, status } = await api.post('/api/user/verificacao/validar-codigo', {
+      const { data, status } = await api.post('/user/verificacao/validar-codigo', {
         telefone: telefoneNormalizado,
         codigo: codigoVerificacao,
       });
@@ -198,8 +195,7 @@ export default function CriarContaPage() {
         payload.name = name;
       }
 
-      // Usa rota local para criação de conta (pública)
-      const { data, status } = await api.post('/api/user/auth/register-com-telefone', payload);
+      const { data, status } = await api.post('/user/auth/register-com-telefone', payload);
 
       if (status === 200 || status === 201) {
         // Redireciona para login após sucesso
