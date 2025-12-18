@@ -18,6 +18,7 @@ export default function CriarContaPage() {
   const [confirmarSenha, setConfirmarSenha] = useState('');
   const [name, setName] = useState('');
   const [atletaEncontrado, setAtletaEncontrado] = useState<any>(null);
+  const [atletaIncompleto, setAtletaIncompleto] = useState(false);
   const [erro, setErro] = useState('');
   const [carregando, setCarregando] = useState(false);
   const router = useRouter();
@@ -66,20 +67,32 @@ export default function CriarContaPage() {
       if (status === 200 && data) {
         setAtletaEncontrado(data);
         setName(data.nome || '');
+        setAtletaIncompleto(false);
+
+        const emailEncontrado: string | null = data.email || null;
+        const isEmailTemporario =
+          !!emailEncontrado &&
+          (emailEncontrado.endsWith('@pendente.local') ||
+            emailEncontrado.startsWith('temp_'));
         
-        // Se já tem conta (usuarioId existe), redireciona para login
-        if (data.usuarioId && data.email) {
-          router.push(`/login?email=${encodeURIComponent(data.email)}`);
+        // Se já tem conta "normal" (usuarioId existe e email não é temporário), redireciona para login
+        if (data.usuarioId && emailEncontrado && !isEmailTemporario) {
+          router.push(`/login?email=${encodeURIComponent(emailEncontrado)}`);
           return;
         }
         
-        // Se tem email mas não tem conta (pendente), vai para confirmação de email
-        if (data.email && !data.usuarioId) {
-          setEmailMascarado(mascararEmail(data.email));
-          setEtapa('confirmar-email');
-        } else {
-          // Se não tem email, vai direto para criar senha (novo cadastro)
+        // Se o email é temporário ou não existe, tratar como cadastro pendente/incompleto
+        if (!emailEncontrado || isEmailTemporario) {
+          // Marca como atleta incompleto para pedir email no próximo passo
+          setAtletaIncompleto(true);
           setEtapa('criar-senha');
+          return;
+        }
+
+        // Se tem email "real" mas ainda não tem usuário vinculado, vai para confirmação de email
+        if (emailEncontrado && !data.usuarioId) {
+          setEmailMascarado(mascararEmail(emailEncontrado));
+          setEtapa('confirmar-email');
         }
       } else {
         // Telefone não encontrado - novo cadastro
@@ -324,7 +337,7 @@ export default function CriarContaPage() {
             )}
 
             <form onSubmit={handleCriarSenha} className="space-y-5">
-              {!atletaEncontrado && (
+              {(!atletaEncontrado || atletaIncompleto) && (
                 <>
                   <div>
                     <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
