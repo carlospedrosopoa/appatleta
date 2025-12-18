@@ -100,6 +100,13 @@ function LoginForm() {
       <div className="w-full max-w-md">
         <div className="bg-white rounded-2xl shadow-xl p-8 sm:p-10">
           <div className="text-center mb-8">
+            <div className="flex justify-center mb-4">
+              <img
+                src="/icon-192x192.png"
+                alt="Play na Quadra"
+                className="h-16 w-16 rounded-xl shadow-md"
+              />
+            </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Bem-vindo</h1>
             <p className="text-gray-600">Faça login para continuar</p>
           </div>

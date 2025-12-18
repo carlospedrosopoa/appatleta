@@ -185,6 +185,13 @@ export default function CriarContaPage() {
         <div className="w-full max-w-md">
           <div className="bg-white rounded-2xl shadow-xl p-8 sm:p-10">
             <div className="text-center mb-8">
+              <div className="flex justify-center mb-4">
+                <img
+                  src="/icon-192x192.png"
+                  alt="Play na Quadra"
+                  className="h-16 w-16 rounded-xl shadow-md"
+                />
+              </div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">Criar Conta</h1>
               <p className="text-gray-600">Informe seu telefone para começar</p>
             </div>
@@ -253,6 +260,13 @@ export default function CriarContaPage() {
         <div className="w-full max-w-md">
           <div className="bg-white rounded-2xl shadow-xl p-8 sm:p-10">
             <div className="text-center mb-8">
+              <div className="flex justify-center mb-4">
+                <img
+                  src="/icon-192x192.png"
+                  alt="Play na Quadra"
+                  className="h-16 w-16 rounded-xl shadow-md"
+                />
+              </div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">Confirmar Email</h1>
               <p className="text-gray-600">Confirme seu email para continuar</p>
               <p className="text-sm text-gray-500 mt-2">
@@ -320,6 +334,13 @@ export default function CriarContaPage() {
         <div className="w-full max-w-md">
           <div className="bg-white rounded-2xl shadow-xl p-8 sm:p-10">
             <div className="text-center mb-8">
+              <div className="flex justify-center mb-4">
+                <img
+                  src="/icon-192x192.png"
+                  alt="Play na Quadra"
+                  className="h-16 w-16 rounded-xl shadow-md"
+                />
+              </div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">
                 {atletaEncontrado ? 'Criar Senha' : 'Criar Conta'}
               </h1>
