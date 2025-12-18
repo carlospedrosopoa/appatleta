@@ -12,6 +12,8 @@ interface AtletaForm {
   dataNascimento: string;
   genero: string;
   categoria: string;
+  esportePreferido: string;
+  esportesPratica: string[];
 }
 
 export default function PreencherPerfilAtletaPage() {
@@ -23,6 +25,8 @@ export default function PreencherPerfilAtletaPage() {
     dataNascimento: '',
     genero: '',
     categoria: '',
+    esportePreferido: '',
+    esportesPratica: [],
   });
 
   const [points, setPoints] = useState<Arena[]>([]);
@@ -69,6 +73,8 @@ export default function PreencherPerfilAtletaPage() {
             dataNascimento: atleta.dataNascimento ? atleta.dataNascimento.split('T')[0] : '',
             genero: atleta.genero || '',
             categoria: atleta.categoria || '',
+            esportePreferido: atleta.esportePreferido || '',
+            esportesPratica: atleta.esportesPratica || [],
           });
           
           if (atleta.fotoUrl) {
@@ -257,6 +263,59 @@ export default function PreencherPerfilAtletaPage() {
             <option value="A">A</option>
             <option value="PRO">PRO</option>
           </select>
+        </div>
+
+        <div>
+          <label className="block font-semibold mb-1">Esporte Preferido</label>
+          <select
+            name="esportePreferido"
+            value={form.esportePreferido}
+            onChange={handleChange}
+            className="w-full p-2 border rounded"
+          >
+            <option value="">Selecione seu esporte preferido</option>
+            <option value="Tênis">Tênis</option>
+            <option value="Futebol">Futebol</option>
+            <option value="Vôlei">Vôlei</option>
+            <option value="Basquete">Basquete</option>
+            <option value="Futsal">Futsal</option>
+            <option value="Futvolei">Futvolei</option>
+            <option value="Beach Tennis">Beach Tennis</option>
+            <option value="Padel">Padel</option>
+            <option value="Pickleball">Pickleball</option>
+            <option value="Squash">Squash</option>
+            <option value="Badminton">Badminton</option>
+            <option value="Handebol">Handebol</option>
+          </select>
+          <p className="text-xs text-gray-500 mt-1">Este será seu esporte padrão nas seleções</p>
+        </div>
+
+        <div>
+          <label className="block font-semibold mb-2">Esportes que Pratica</label>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 border rounded p-3 max-h-64 overflow-y-auto">
+            {['Tênis', 'Futebol', 'Vôlei', 'Basquete', 'Futsal', 'Futvolei', 'Beach Tennis', 'Padel', 'Pickleball', 'Squash', 'Badminton', 'Handebol'].map((esporte) => (
+              <label key={esporte} className="flex items-center gap-2 p-2 border border-gray-300 rounded hover:bg-gray-50 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.esportesPratica.includes(esporte)}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setForm({ ...form, esportesPratica: [...form.esportesPratica, esporte] });
+                    } else {
+                      setForm({ ...form, esportesPratica: form.esportesPratica.filter((e) => e !== esporte) });
+                    }
+                  }}
+                  className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-700">{esporte}</span>
+              </label>
+            ))}
+          </div>
+          {form.esportesPratica.length > 0 && (
+            <p className="mt-2 text-xs text-gray-500">
+              Selecionados: {form.esportesPratica.join(', ')}
+            </p>
+          )}
         </div>
 
         <div>
