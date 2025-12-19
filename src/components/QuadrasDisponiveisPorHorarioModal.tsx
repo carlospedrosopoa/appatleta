@@ -94,9 +94,31 @@ export default function QuadrasDisponiveisPorHorarioModal({
       const slots = gerarSlots();
       const horariosLivres: string[] = [];
 
+      // Verificar se a data selecionada é hoje
+      const hoje = new Date();
+      const hojeStr = hoje.toISOString().split('T')[0];
+      const isHoje = data === hojeStr;
+      
+      // Se for hoje, calcular horário mínimo (30 minutos após o horário atual)
+      let horarioMinimoMin = 0;
+      if (isHoje) {
+        const agora = new Date();
+        const horaAtual = agora.getHours();
+        const minutoAtual = agora.getMinutes();
+        const agoraMin = horaAtual * 60 + minutoAtual;
+        // Adicionar 30 minutos ao horário atual
+        horarioMinimoMin = agoraMin + 30;
+      }
+
       for (const horaStr of slots) {
         const [hStr, mStr] = horaStr.split(':');
         const slotInicioMin = parseInt(hStr, 10) * 60 + parseInt(mStr, 10);
+        
+        // Se for hoje, filtrar horários que já passaram ou são muito próximos
+        if (isHoje && slotInicioMin < horarioMinimoMin) {
+          continue;
+        }
+        
         const slotFimMin = slotInicioMin + duracao;
 
         const existeQuadraLivre = quadrasAtivas.some((quadra) =>
