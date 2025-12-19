@@ -12,7 +12,7 @@ interface QuadrasDisponiveisPorHorarioModalProps {
   onClose: () => void;
   dataInicial?: string;
   duracaoInicial?: number;
-  onSelecionarHorario: (data: string, hora: string, duracao: number) => void;
+  onSelecionarHorario: (data: string, hora: string, duracao: number, esporte?: string) => void;
   pointIdsPermitidos?: string[];
   perfilAtleta?: {
     esportePreferido?: string;
@@ -369,7 +369,7 @@ export default function QuadrasDisponiveisPorHorarioModal({
                   <button
                     key={hora}
                     type="button"
-                    onClick={() => onSelecionarHorario(data, hora, duracao)}
+                    onClick={() => onSelecionarHorario(data, hora, duracao, esporteSelecionado || undefined)}
                     className="px-3 py-2 text-sm rounded-lg border border-green-200 bg-green-50 text-green-800 hover:bg-green-100 font-medium"
                   >
                     {hora}

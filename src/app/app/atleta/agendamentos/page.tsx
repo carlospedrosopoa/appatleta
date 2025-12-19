@@ -34,6 +34,7 @@ export default function AgendamentosPage() {
   const [modalHorariosAberto, setModalHorariosAberto] = useState(false);
   const [horaSelecionada, setHoraSelecionada] = useState<string>('');
   const [duracaoSelecionada, setDuracaoSelecionada] = useState<number>(90);
+  const [esporteSelecionado, setEsporteSelecionado] = useState<string>('');
 
   useEffect(() => {
     carregarDados();
@@ -151,10 +152,11 @@ export default function AgendamentosPage() {
     setModalHorariosAberto(true);
   };
 
-  const handleSelecionarHorario = (dataSel: string, horaSel: string, duracaoSel: number) => {
+  const handleSelecionarHorario = (dataSel: string, horaSel: string, duracaoSel: number, esporteSel?: string) => {
     setDataAgendamento(dataSel);
     setHoraSelecionada(horaSel);
     setDuracaoSelecionada(duracaoSel);
+    setEsporteSelecionado(esporteSel || '');
     setAgendamentoEditando(null);
     setModalHorariosAberto(false);
     setModalEditarAberto(true);
@@ -541,11 +543,13 @@ export default function AgendamentosPage() {
         dataInicial={agendamentoEditando ? undefined : dataAgendamento}
         horaInicial={agendamentoEditando ? undefined : horaSelecionada}
         duracaoInicial={agendamentoEditando ? undefined : duracaoSelecionada}
+        esporteSelecionado={agendamentoEditando ? undefined : esporteSelecionado}
         onClose={() => {
           setModalEditarAberto(false);
           setAgendamentoEditando(null);
           setHoraSelecionada('');
           setDuracaoSelecionada(90);
+          setEsporteSelecionado('');
         }}
         onSuccess={() => {
           setModalEditarAberto(false);
@@ -553,6 +557,7 @@ export default function AgendamentosPage() {
           // Limpar campos após sucesso
           setHoraSelecionada('');
           setDuracaoSelecionada(90);
+          setEsporteSelecionado('');
           carregarAgendamentos();
         }}
         onCancelarAgendamento={(agendamento) => {

@@ -26,6 +26,7 @@ interface EditarAgendamentoModalProps {
   dataInicial?: string; // Data pré-preenchida para novo agendamento
   horaInicial?: string; // Hora pré-preenchida para novo agendamento
   duracaoInicial?: number; // Duração pré-preenchida para novo agendamento
+  esporteSelecionado?: string; // Esporte selecionado para filtrar quadras
   onCancelarAgendamento?: (agendamento: Agendamento) => void; // Callback para cancelar agendamento
 }
 
@@ -38,6 +39,7 @@ export default function EditarAgendamentoModal({
   dataInicial,
   horaInicial,
   duracaoInicial,
+  esporteSelecionado,
   onCancelarAgendamento,
 }: EditarAgendamentoModalProps) {
   const { usuario } = useAuth();
@@ -734,7 +736,51 @@ export default function EditarAgendamentoModal({
           const solMinutosInicio = solHora * 60 + solMinuto;
           const solMinutosFim = solMinutosInicio + duracao;
 
-          const quadrasDisponibilidade = quadrasAtivas.map((quadra: any) => {
+          // Filtrar quadras por esporte selecionado, se houver
+          let quadrasFiltradas = quadrasAtivas;
+          if (esporteSelecionado) {
+            console.log('[FILTRO ESPORTE MODAL] Esporte selecionado:', esporteSelecionado);
+            quadrasFiltradas = quadrasAtivas.filter((quadra: any) => {
+              if (!quadra.tiposEsporte) {
+                console.log(`[FILTRO ESPORTE MODAL] Quadra ${quadra.nome} - SEM tiposEsporte - EXCLUÍDA`);
+                return false;
+              }
+              
+              let tiposEsporteArray: string[] = [];
+              if (Array.isArray(quadra.tiposEsporte)) {
+                tiposEsporteArray = quadra.tiposEsporte;
+              } else if (typeof quadra.tiposEsporte === 'string') {
+                try {
+                  tiposEsporteArray = JSON.parse(quadra.tiposEsporte);
+                } catch {
+                  console.log(`[FILTRO ESPORTE MODAL] Quadra ${quadra.nome} - Erro ao fazer parse - EXCLUÍDA`);
+                  return false;
+                }
+              }
+              
+              if (tiposEsporteArray.length === 0) {
+                console.log(`[FILTRO ESPORTE MODAL] Quadra ${quadra.nome} - Array vazio - EXCLUÍDA`);
+                return false;
+              }
+              
+              const esporteSelecionadoNormalizado = esporteSelecionado.trim();
+              const atendeEsporte = tiposEsporteArray.some((esporte: string) => {
+                const esporteNormalizado = String(esporte).trim();
+                return esporteNormalizado.toLowerCase() === esporteSelecionadoNormalizado.toLowerCase();
+              });
+              
+              console.log(`[FILTRO ESPORTE MODAL] Quadra ${quadra.nome} - tiposEsporte:`, tiposEsporteArray, `- Atende ${esporteSelecionado}:`, atendeEsporte);
+              
+              if (!atendeEsporte) {
+                console.log(`[FILTRO ESPORTE MODAL] Quadra ${quadra.nome} - EXCLUÍDA (não atende o esporte)`);
+              }
+              
+              return atendeEsporte;
+            });
+            console.log(`[FILTRO ESPORTE MODAL] Total de quadras após filtro: ${quadrasFiltradas.length} de ${quadrasAtivas.length}`);
+          }
+
+          const quadrasDisponibilidade = quadrasFiltradas.map((quadra: any) => {
             // Verificar conflitos com agendamentos
             // Usar a mesma lógica da API: extrair componentes da data/hora e comparar diretamente
             const conflitoAgendamento = agendamentos.find((ag: Agendamento) => {
