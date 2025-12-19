@@ -640,6 +640,24 @@ function ModalEditarAtleta({ isOpen, atleta, onClose, onSuccess }: ModalEditarAt
             )}
           </div>
 
+          <div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.aceitaLembretesAgendamento}
+                onChange={(e) => setForm({ ...form, aceitaLembretesAgendamento: e.target.checked })}
+                className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                disabled={salvando}
+              />
+              <span className="text-sm font-semibold text-gray-700">
+                Aceitar receber lembretes de agendamento via WhatsApp
+              </span>
+            </label>
+            <p className="text-xs text-gray-500 mt-1 ml-6">
+              Você receberá lembretes antes dos seus agendamentos (se a arena estiver configurada para enviar)
+            </p>
+          </div>
+
           {!carregandoArenas && points.length > 0 && (
             <>
               <div>
