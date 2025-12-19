@@ -1379,11 +1379,10 @@ export default function EditarAgendamentoModal({
                                   <h3 className="text-base font-semibold text-gray-900 truncate">
                                     {item.point.nome}
                                   </h3>
-                                  <div className="flex items-center gap-2 mt-0.5">
+                                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                                     <p className="text-sm text-gray-600">
                                       {quadrasDisponiveis.length} {quadrasDisponiveis.length === 1 ? 'quadra disponível' : 'quadras disponíveis'}
                                     </p>
-                                    <span className="text-gray-400">•</span>
                                     <p className={`text-sm font-medium flex items-center gap-1 ${
                                       distancia != null 
                                         ? 'text-blue-600' 
