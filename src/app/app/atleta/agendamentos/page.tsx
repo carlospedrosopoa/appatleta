@@ -19,9 +19,11 @@ export default function AgendamentosPage() {
   const [points, setPoints] = useState<Arena[]>([]);
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
   const [loading, setLoading] = useState(true);
-  const [dataAgendamento, setDataAgendamento] = useState('');
-  const [horaAgendamento, setHoraAgendamento] = useState('');
-  const [duracaoAgendamento, setDuracaoAgendamento] = useState(90);
+  const [dataAgendamento, setDataAgendamento] = useState(() => {
+    // Inicializar com data de hoje
+    const hoje = new Date();
+    return hoje.toISOString().split('T')[0];
+  });
   const [incluirPassados, setIncluirPassados] = useState(false);
   const [agendamentoExpandido, setAgendamentoExpandido] = useState<string | null>(null);
   const [modalEditarAberto, setModalEditarAberto] = useState(false);
@@ -30,6 +32,8 @@ export default function AgendamentosPage() {
   const [agendamentoCancelando, setAgendamentoCancelando] = useState<Agendamento | null>(null);
   const [meuPerfilAtleta, setMeuPerfilAtleta] = useState<any>(null);
   const [modalHorariosAberto, setModalHorariosAberto] = useState(false);
+  const [horaSelecionada, setHoraSelecionada] = useState<string>('');
+  const [duracaoSelecionada, setDuracaoSelecionada] = useState<number>(90);
 
   useEffect(() => {
     carregarDados();
@@ -144,7 +148,7 @@ export default function AgendamentosPage() {
 
   const abrirHorariosDisponiveis = () => {
     if (!dataAgendamento) {
-      alert('Por favor, selecione a data antes de ver horários disponíveis.');
+      alert('Por favor, selecione a data antes de buscar quadras.');
       return;
     }
     setModalHorariosAberto(true);
@@ -152,8 +156,8 @@ export default function AgendamentosPage() {
 
   const handleSelecionarHorario = (dataSel: string, horaSel: string, duracaoSel: number) => {
     setDataAgendamento(dataSel);
-    setHoraAgendamento(horaSel);
-    setDuracaoAgendamento(duracaoSel);
+    setHoraSelecionada(horaSel);
+    setDuracaoSelecionada(duracaoSel);
     setAgendamentoEditando(null);
     setModalHorariosAberto(false);
     setModalEditarAberto(true);
@@ -254,63 +258,26 @@ export default function AgendamentosPage() {
           </div>
           
           {/* Formulário compacto para buscar quadra */}
-          <div className="bg-white rounded-lg border border-gray-200 p-3 shadow-sm">
-            <div className="grid grid-cols-3 gap-2 mb-2">
-              <div>
-                <label className="block text-[10px] font-medium text-gray-600 mb-0.5">Data</label>
+          <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
+            <div className="flex flex-col sm:flex-row gap-3 items-end">
+              <div className="flex-1 w-full sm:w-auto">
+                <label className="block text-xs font-medium text-gray-700 mb-1.5">Data</label>
                 <input
                   type="date"
                   value={dataAgendamento}
                   onChange={(e) => setDataAgendamento(e.target.value)}
                   min={new Date().toISOString().split('T')[0]}
-                  className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent outline-none"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                 />
               </div>
-              <div>
-                <label className="block text-[10px] font-medium text-gray-600 mb-0.5">Hora</label>
-                <input
-                  type="time"
-                  value={horaAgendamento}
-                  onChange={(e) => setHoraAgendamento(e.target.value)}
-                  className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-[10px] font-medium text-gray-600 mb-0.5">Duração</label>
-                <select
-                  value={duracaoAgendamento}
-                  onChange={(e) => setDuracaoAgendamento(Number(e.target.value))}
-                  className="w-full px-2 py-1.5 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-transparent outline-none"
-                >
-                  <option value={30}>30min</option>
-                  <option value={60}>1h</option>
-                  <option value={90}>1h30</option>
-                  <option value={120}>2h</option>
-                  <option value={180}>3h</option>
-                </select>
-              </div>
+              <button
+                onClick={abrirHorariosDisponiveis}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-semibold whitespace-nowrap"
+              >
+                <Plus className="w-4 h-4" />
+                Buscar Quadra
+              </button>
             </div>
-            <button
-              onClick={() => {
-                if (!dataAgendamento || !horaAgendamento) {
-                  alert('Por favor, preencha a data e hora antes de buscar uma quadra');
-                  return;
-                }
-                setModalEditarAberto(true);
-                setAgendamentoEditando(null);
-              }}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-semibold"
-            >
-              <Plus className="w-4 h-4" />
-              Buscar Quadra
-            </button>
-            <button
-              type="button"
-              onClick={abrirHorariosDisponiveis}
-              className="mt-2 w-full text-xs text-blue-700 hover:text-blue-900 underline"
-            >
-              Ver horários disponíveis na data
-            </button>
           </div>
         </div>
 
@@ -585,19 +552,20 @@ export default function AgendamentosPage() {
         isOpen={modalEditarAberto}
         agendamento={agendamentoEditando}
         dataInicial={agendamentoEditando ? undefined : dataAgendamento}
-        horaInicial={agendamentoEditando ? undefined : horaAgendamento}
-        duracaoInicial={agendamentoEditando ? undefined : duracaoAgendamento}
+        horaInicial={agendamentoEditando ? undefined : horaSelecionada}
+        duracaoInicial={agendamentoEditando ? undefined : duracaoSelecionada}
         onClose={() => {
           setModalEditarAberto(false);
           setAgendamentoEditando(null);
+          setHoraSelecionada('');
+          setDuracaoSelecionada(90);
         }}
         onSuccess={() => {
           setModalEditarAberto(false);
           setAgendamentoEditando(null);
           // Limpar campos após sucesso
-          setDataAgendamento('');
-          setHoraAgendamento('');
-          setDuracaoAgendamento(60);
+          setHoraSelecionada('');
+          setDuracaoSelecionada(90);
           carregarAgendamentos();
         }}
         onCancelarAgendamento={(agendamento) => {
@@ -610,7 +578,7 @@ export default function AgendamentosPage() {
         isOpen={modalHorariosAberto}
         onClose={() => setModalHorariosAberto(false)}
         dataInicial={dataAgendamento || undefined}
-        duracaoInicial={duracaoAgendamento}
+        duracaoInicial={duracaoSelecionada}
         onSelecionarHorario={handleSelecionarHorario}
         pointIdsPermitidos={points.map((p) => p.id)}
       />
