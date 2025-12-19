@@ -131,6 +131,23 @@ export default function EditarAgendamentoModal({
   useEffect(() => {
     if (isOpen) {
       carregarDados();
+      // Solicitar localização quando o modal abrir (apenas para novo agendamento)
+      if (!agendamento) {
+        // Solicitar localização imediatamente
+        obterLocalizacaoAtual()
+          .then((loc) => {
+            if (loc) {
+              setLocalizacaoAtual(loc);
+            } else {
+              // Se não conseguir, definir como null para mostrar "não disponível"
+              setLocalizacaoAtual(null);
+            }
+          })
+          .catch((error) => {
+            console.error('Erro ao obter localização:', error);
+            setLocalizacaoAtual(null);
+          });
+      }
       if (agendamento) {
         preencherFormulario();
       } else {
@@ -144,6 +161,9 @@ export default function EditarAgendamentoModal({
           }, 100);
         }
       }
+    } else {
+      // Resetar localização quando modal fechar
+      setLocalizacaoAtual(null);
     }
   }, [isOpen, agendamento, quadraIdInicial, dataInicial, horaInicial, duracaoInicial]);
 
