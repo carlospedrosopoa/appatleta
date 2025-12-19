@@ -9,6 +9,7 @@ import { userArenaService, userAtletaService, type Arena } from '@/services/user
 import { api } from '@/lib/api';
 import type { Agendamento, ModoAgendamento } from '@/types/agendamento';
 import { Calendar, Clock, MapPin, AlertCircle, User, Users, UserPlus, X } from 'lucide-react';
+import { calcularDistancia, formatarDistancia, obterLocalizacaoAtual } from '@/lib/geolocationUtils';
 
 interface Atleta {
   id: string;
@@ -62,6 +63,7 @@ export default function EditarAgendamentoModal({
   }>>([]);
   const [carregandoDisponibilidade, setCarregandoDisponibilidade] = useState(false);
   const [arenaExpandida, setArenaExpandida] = useState<string | null>(null);
+  const [localizacaoAtual, setLocalizacaoAtual] = useState<{ latitude: number; longitude: number } | null>(null);
   const [meuPerfilAtleta, setMeuPerfilAtleta] = useState<any>(null);
 
   // Modo de agendamento (apenas para admin)
@@ -1303,38 +1305,76 @@ export default function EditarAgendamentoModal({
                   </div>
                 ) : (
                   <div className="space-y-3 max-h-96 overflow-y-auto">
-                    {disponibilidade.map((item) => {
-                      const quadrasDisponiveis = item.quadras.filter((q) => q.disponivel);
-                      const isExpandida = arenaExpandida === item.point.id;
-                      
-                      return (
-                        <div
-                          key={item.point.id}
-                          className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
-                        >
-                          {/* Card da Arena */}
-                          <button
-                            type="button"
-                            onClick={() => setArenaExpandida(isExpandida ? null : item.point.id)}
-                            className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                    {disponibilidade
+                      .map((item) => {
+                        // Calcular distância se tiver localização atual e coordenadas da arena
+                        let distancia: number | null = null;
+                        if (
+                          localizacaoAtual &&
+                          item.point.latitude != null &&
+                          item.point.longitude != null
+                        ) {
+                          distancia = calcularDistancia(
+                            localizacaoAtual.latitude,
+                            localizacaoAtual.longitude,
+                            item.point.latitude,
+                            item.point.longitude
+                          );
+                        }
+                        return { item, distancia };
+                      })
+                      .sort((a, b) => {
+                        // Ordenar por distância (mais próximas primeiro) se disponível
+                        if (a.distancia != null && b.distancia != null) {
+                          return a.distancia - b.distancia;
+                        }
+                        if (a.distancia != null) return -1;
+                        if (b.distancia != null) return 1;
+                        return 0;
+                      })
+                      .map(({ item, distancia }) => {
+                        const quadrasDisponiveis = item.quadras.filter((q) => q.disponivel);
+                        const isExpandida = arenaExpandida === item.point.id;
+                        
+                        return (
+                          <div
+                            key={item.point.id}
+                            className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
                           >
-                            <div className="flex items-center gap-3 flex-1 min-w-0">
-                              {item.point.logoUrl && (
-                                <img
-                                  src={item.point.logoUrl}
-                                  alt={item.point.nome}
-                                  className="w-12 h-12 rounded-lg object-contain flex-shrink-0 border border-gray-200"
-                                />
-                              )}
-                              <div className="flex-1 min-w-0 text-left">
-                                <h3 className="text-base font-semibold text-gray-900 truncate">
-                                  {item.point.nome}
-                                </h3>
-                                <p className="text-sm text-gray-600 mt-0.5">
-                                  {quadrasDisponiveis.length} {quadrasDisponiveis.length === 1 ? 'quadra disponível' : 'quadras disponíveis'}
-                                </p>
+                            {/* Card da Arena */}
+                            <button
+                              type="button"
+                              onClick={() => setArenaExpandida(isExpandida ? null : item.point.id)}
+                              className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                            >
+                              <div className="flex items-center gap-3 flex-1 min-w-0">
+                                {item.point.logoUrl && (
+                                  <img
+                                    src={item.point.logoUrl}
+                                    alt={item.point.nome}
+                                    className="w-12 h-12 rounded-lg object-contain flex-shrink-0 border border-gray-200"
+                                  />
+                                )}
+                                <div className="flex-1 min-w-0 text-left">
+                                  <h3 className="text-base font-semibold text-gray-900 truncate">
+                                    {item.point.nome}
+                                  </h3>
+                                  <div className="flex items-center gap-2 mt-0.5">
+                                    <p className="text-sm text-gray-600">
+                                      {quadrasDisponiveis.length} {quadrasDisponiveis.length === 1 ? 'quadra disponível' : 'quadras disponíveis'}
+                                    </p>
+                                    {distancia != null && (
+                                      <>
+                                        <span className="text-gray-400">•</span>
+                                        <p className="text-sm text-blue-600 font-medium flex items-center gap-1">
+                                          <MapPin className="w-3 h-3" />
+                                          {formatarDistancia(distancia)}
+                                        </p>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
                               </div>
-                            </div>
                             <div className="flex items-center gap-2 flex-shrink-0">
                               <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
                                 quadrasDisponiveis.length > 0
