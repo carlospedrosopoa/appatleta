@@ -160,6 +160,8 @@ export default function PreencherPerfilAtletaPage() {
       fotoUrl: fotoUrl || null,
       pointIdPrincipal: pointIdPrincipal || null,
       pointIdsFrequentes: arenasFrequentes,
+      esportePreferido: form.esportePreferido || null,
+      esportesPratica: form.esportesPratica,
     };
 
     try {

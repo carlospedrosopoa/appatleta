@@ -38,6 +38,8 @@ export interface Atleta {
     logoUrl?: string;
   };
   assinante?: boolean;
+  esportePreferido?: string;
+  esportesPratica?: string[];
 }
 
 export interface CriarAtletaPayload {
@@ -49,6 +51,8 @@ export interface CriarAtletaPayload {
   fotoUrl?: string | null;
   pointIdPrincipal?: string | null;
   pointIdsFrequentes?: string[];
+  esportePreferido?: string | null;
+  esportesPratica?: string[];
 }
 
 export interface AtualizarAtletaPayload {
@@ -60,6 +64,8 @@ export interface AtualizarAtletaPayload {
   fotoUrl?: string | null;
   pointIdPrincipal?: string | null;
   pointIdsFrequentes?: string[];
+  esportePreferido?: string | null;
+  esportesPratica?: string[];
 }
 
 // Serviço de autenticação para frontend externo
