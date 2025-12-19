@@ -1340,8 +1340,13 @@ export default function EditarAgendamentoModal({
                             item.point.latitude,
                             item.point.longitude
                           );
-                          // Debug: logar distância calculada
-                          console.log(`Distância calculada para ${item.point.nome}:`, distancia, 'km');
+                          // Debug: logar distância calculada e valores usados
+                          console.log(`[DISTÂNCIA] ${item.point.nome}:`, {
+                            localizacao: { lat: localizacaoAtual.latitude, lon: localizacaoAtual.longitude },
+                            arena: { lat: item.point.latitude, lon: item.point.longitude },
+                            distanciaCalculada: distancia,
+                            distanciaFormatada: formatarDistancia(distancia)
+                          });
                         }
                         return { item, distancia };
                       })
