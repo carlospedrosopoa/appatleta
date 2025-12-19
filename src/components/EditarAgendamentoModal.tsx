@@ -1337,19 +1337,33 @@ export default function EditarAgendamentoModal({
                           // Converter coordenadas para número (podem vir como string do banco)
                           const latArena = typeof item.point.latitude === 'string' 
                             ? parseFloat(item.point.latitude) 
-                            : item.point.latitude;
+                            : Number(item.point.latitude);
                           const lonArena = typeof item.point.longitude === 'string' 
                             ? parseFloat(item.point.longitude) 
-                            : item.point.longitude;
+                            : Number(item.point.longitude);
                           
-                          // Validar se as conversões foram bem-sucedidas
-                          if (isFinite(latArena) && isFinite(lonArena)) {
+                          // Validar se as conversões foram bem-sucedidas e se os valores são válidos
+                          if (
+                            isFinite(latArena) && 
+                            isFinite(lonArena) &&
+                            latArena >= -90 && latArena <= 90 &&
+                            lonArena >= -180 && lonArena <= 180
+                          ) {
                             distancia = calcularDistancia(
                               localizacaoAtual.latitude,
                               localizacaoAtual.longitude,
                               latArena,
                               lonArena
                             );
+                            
+                            // Debug: verificar se o valor parece incorreto (muito grande para ser próximo)
+                            if (distancia > 100) {
+                              console.warn(`[DISTÂNCIA] Valor suspeito para ${item.point.nome}:`, {
+                                localizacao: { lat: localizacaoAtual.latitude, lon: localizacaoAtual.longitude },
+                                arena: { lat: latArena, lon: lonArena, original: { lat: item.point.latitude, lon: item.point.longitude } },
+                                distanciaCalculada: distancia
+                              });
+                            }
                           }
                         }
                         return { item, distancia };
