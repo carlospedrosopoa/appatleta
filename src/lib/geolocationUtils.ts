@@ -41,10 +41,28 @@ function toRad(degrees: number): number {
  * @returns String formatada (ex: "1.2 km" ou "850 m")
  */
 export function formatarDistancia(distanciaKm: number): string {
-  if (distanciaKm < 1) {
-    return `${Math.round(distanciaKm * 1000)} m`;
+  // Validar se o valor é válido
+  if (!isFinite(distanciaKm) || distanciaKm < 0) {
+    return '—';
   }
-  return `${distanciaKm.toFixed(1)} km`;
+  
+  // Se for menor que 1km, mostrar em metros
+  if (distanciaKm < 1) {
+    const metros = Math.round(distanciaKm * 1000);
+    return `${metros} m`;
+  }
+  
+  // Se for maior ou igual a 1km, mostrar em km
+  // Arredondar para 1 casa decimal
+  const kmArredondado = Math.round(distanciaKm * 10) / 10;
+  
+  // Se for um número inteiro (ou muito próximo), mostrar sem decimal
+  if (Math.abs(kmArredondado - Math.round(kmArredondado)) < 0.05) {
+    return `${Math.round(kmArredondado)} km`;
+  }
+  
+  // Caso contrário, mostrar com 1 casa decimal
+  return `${kmArredondado.toFixed(1)} km`;
 }
 
 /**

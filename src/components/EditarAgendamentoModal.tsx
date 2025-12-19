@@ -1340,6 +1340,8 @@ export default function EditarAgendamentoModal({
                             item.point.latitude,
                             item.point.longitude
                           );
+                          // Debug: logar distância calculada
+                          console.log(`Distância calculada para ${item.point.nome}:`, distancia, 'km');
                         }
                         return { item, distancia };
                       })
