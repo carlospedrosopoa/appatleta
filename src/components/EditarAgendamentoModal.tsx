@@ -1334,19 +1334,23 @@ export default function EditarAgendamentoModal({
                           item.point.latitude != null &&
                           item.point.longitude != null
                         ) {
-                          distancia = calcularDistancia(
-                            localizacaoAtual.latitude,
-                            localizacaoAtual.longitude,
-                            item.point.latitude,
-                            item.point.longitude
-                          );
-                          // Debug: logar distância calculada e valores usados
-                          console.log(`[DISTÂNCIA] ${item.point.nome}:`, {
-                            localizacao: { lat: localizacaoAtual.latitude, lon: localizacaoAtual.longitude },
-                            arena: { lat: item.point.latitude, lon: item.point.longitude },
-                            distanciaCalculada: distancia,
-                            distanciaFormatada: formatarDistancia(distancia)
-                          });
+                          // Converter coordenadas para número (podem vir como string do banco)
+                          const latArena = typeof item.point.latitude === 'string' 
+                            ? parseFloat(item.point.latitude) 
+                            : item.point.latitude;
+                          const lonArena = typeof item.point.longitude === 'string' 
+                            ? parseFloat(item.point.longitude) 
+                            : item.point.longitude;
+                          
+                          // Validar se as conversões foram bem-sucedidas
+                          if (isFinite(latArena) && isFinite(lonArena)) {
+                            distancia = calcularDistancia(
+                              localizacaoAtual.latitude,
+                              localizacaoAtual.longitude,
+                              latArena,
+                              lonArena
+                            );
+                          }
                         }
                         return { item, distancia };
                       })
