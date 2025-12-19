@@ -24,6 +24,7 @@ export interface Quadra {
   tipo?: string;
   capacidade?: number;
   ativo: boolean;
+  tiposEsporte?: string[]; // Array de tipos de esporte (ex: ['Tênis', 'Futebol', 'Vôlei'])
   createdAt: string;
   updatedAt: string;
 }

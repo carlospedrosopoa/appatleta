@@ -14,6 +14,10 @@ interface QuadrasDisponiveisPorHorarioModalProps {
   duracaoInicial?: number;
   onSelecionarHorario: (data: string, hora: string, duracao: number) => void;
   pointIdsPermitidos?: string[];
+  perfilAtleta?: {
+    esportePreferido?: string;
+    esportesPratica?: string[];
+  } | null;
 }
 
 const INICIO_DIA_MINUTOS = 6 * 60; // 06:00
@@ -27,11 +31,18 @@ export default function QuadrasDisponiveisPorHorarioModal({
   duracaoInicial,
   onSelecionarHorario,
   pointIdsPermitidos,
+  perfilAtleta,
 }: QuadrasDisponiveisPorHorarioModalProps) {
   const [data, setData] = useState('');
   const [duracao, setDuracao] = useState(90);
+  const [esporteSelecionado, setEsporteSelecionado] = useState<string>('');
   const [carregando, setCarregando] = useState(false);
   const [horariosDisponiveis, setHorariosDisponiveis] = useState<string[]>([]);
+  
+  // Lista de esportes disponíveis (apenas os que o atleta pratica)
+  const esportesDisponiveis = perfilAtleta?.esportesPratica && perfilAtleta.esportesPratica.length > 0
+    ? perfilAtleta.esportesPratica
+    : [];
 
   useEffect(() => {
     if (isOpen) {
@@ -39,9 +50,11 @@ export default function QuadrasDisponiveisPorHorarioModal({
       const dataDefault = hoje.toISOString().split('T')[0];
       setData(dataInicial || dataDefault);
       setDuracao(duracaoInicial ?? 90);
+      // Definir esporte padrão como o preferido do atleta
+      setEsporteSelecionado(perfilAtleta?.esportePreferido || '');
       setHorariosDisponiveis([]);
     }
-  }, [isOpen, dataInicial, duracaoInicial]);
+  }, [isOpen, dataInicial, duracaoInicial, perfilAtleta]);
 
   const gerarSlots = () => {
     const slots: string[] = [];
@@ -69,6 +82,19 @@ export default function QuadrasDisponiveisPorHorarioModal({
       if (pointIdsPermitidos && pointIdsPermitidos.length > 0) {
         quadrasAtivas = quadrasAtivas.filter((q) => pointIdsPermitidos.includes(q.pointId));
       }
+      
+      // Filtrar por esporte selecionado, se houver
+      if (esporteSelecionado) {
+        quadrasAtivas = quadrasAtivas.filter((q) => {
+          // Se a quadra não tem tiposEsporte definido, incluir (compatibilidade)
+          if (!q.tiposEsporte || q.tiposEsporte.length === 0) {
+            return true;
+          }
+          // Verificar se o esporte selecionado está na lista de esportes da quadra
+          return q.tiposEsporte.includes(esporteSelecionado);
+        });
+      }
+      
       if (quadrasAtivas.length === 0) {
         setHorariosDisponiveis([]);
         return;
@@ -217,9 +243,36 @@ export default function QuadrasDisponiveisPorHorarioModal({
               type="date"
               value={data}
               onChange={(e) => setData(e.target.value)}
+              min={new Date().toISOString().split('T')[0]}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
             />
           </div>
+          
+          {esportesDisponiveis.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Esporte
+              </label>
+              <select
+                value={esporteSelecionado}
+                onChange={(e) => setEsporteSelecionado(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              >
+                <option value="">Todos os esportes</option>
+                {esportesDisponiveis.map((esporte) => (
+                  <option key={esporte} value={esporte}>
+                    {esporte}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-500 mt-1">
+                {esporteSelecionado === perfilAtleta?.esportePreferido && perfilAtleta?.esportePreferido
+                  ? `Seu esporte preferido: ${perfilAtleta.esportePreferido}`
+                  : 'Selecione um esporte para filtrar as quadras disponíveis'}
+              </p>
+            </div>
+          )}
+          
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Duração (minutos)</label>
             <select

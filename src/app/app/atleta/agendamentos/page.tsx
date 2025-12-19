@@ -147,10 +147,7 @@ export default function AgendamentosPage() {
   };
 
   const abrirHorariosDisponiveis = () => {
-    if (!dataAgendamento) {
-      alert('Por favor, selecione a data antes de buscar quadras.');
-      return;
-    }
+    // Removida validação de data - a data será selecionada na modal
     setModalHorariosAberto(true);
   };
 
@@ -260,16 +257,6 @@ export default function AgendamentosPage() {
           {/* Formulário compacto para buscar quadra */}
           <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
             <div className="flex flex-col sm:flex-row gap-3 items-end">
-              <div className="flex-1 w-full sm:w-auto">
-                <label className="block text-xs font-medium text-gray-700 mb-1.5">Data</label>
-                <input
-                  type="date"
-                  value={dataAgendamento}
-                  onChange={(e) => setDataAgendamento(e.target.value)}
-                  min={new Date().toISOString().split('T')[0]}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                />
-              </div>
               <button
                 onClick={abrirHorariosDisponiveis}
                 className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-semibold whitespace-nowrap"
@@ -581,6 +568,7 @@ export default function AgendamentosPage() {
         duracaoInicial={duracaoSelecionada}
         onSelecionarHorario={handleSelecionarHorario}
         pointIdsPermitidos={points.map((p) => p.id)}
+        perfilAtleta={meuPerfilAtleta}
       />
 
       {/* Modal de Confirmação de Cancelamento */}
