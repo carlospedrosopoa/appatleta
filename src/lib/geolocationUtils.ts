@@ -59,21 +59,27 @@ export function obterLocalizacaoAtual(): Promise<{ latitude: number; longitude: 
       return;
     }
 
+    // Verificar se já temos permissão ou solicitar
     navigator.geolocation.getCurrentPosition(
       (position) => {
+        console.log('Localização obtida:', position.coords);
         resolve({
           latitude: position.coords.latitude,
           longitude: position.coords.longitude,
         });
       },
       (error) => {
-        console.warn('Erro ao obter localização:', error.message);
+        console.warn('Erro ao obter localização:', error.message, error.code);
+        // Se for erro de permissão, tentar solicitar novamente
+        if (error.code === error.PERMISSION_DENIED) {
+          console.warn('Permissão de localização negada pelo usuário');
+        }
         resolve(null);
       },
       {
         enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 60000, // Cache de 1 minuto
+        timeout: 15000, // Aumentar timeout para 15 segundos
+        maximumAge: 0, // Sempre obter localização atual, não usar cache
       }
     );
   });

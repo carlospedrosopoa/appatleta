@@ -1363,15 +1363,20 @@ export default function EditarAgendamentoModal({
                                     <p className="text-sm text-gray-600">
                                       {quadrasDisponiveis.length} {quadrasDisponiveis.length === 1 ? 'quadra disponível' : 'quadras disponíveis'}
                                     </p>
-                                    {distancia != null && (
-                                      <>
-                                        <span className="text-gray-400">•</span>
-                                        <p className="text-sm text-blue-600 font-medium flex items-center gap-1">
-                                          <MapPin className="w-3 h-3" />
-                                          {formatarDistancia(distancia)}
-                                        </p>
-                                      </>
-                                    )}
+                                    <span className="text-gray-400">•</span>
+                                    <p className={`text-sm font-medium flex items-center gap-1 ${
+                                      distancia != null 
+                                        ? 'text-blue-600' 
+                                        : 'text-gray-500'
+                                    }`}>
+                                      <MapPin className="w-3 h-3" />
+                                      {distancia != null 
+                                        ? formatarDistancia(distancia)
+                                        : item.point.latitude != null && item.point.longitude != null
+                                          ? 'Localização não disponível'
+                                          : 'Coordenadas não cadastradas'
+                                      }
+                                    </p>
                                   </div>
                                 </div>
                               </div>
