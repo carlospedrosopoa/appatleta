@@ -387,6 +387,7 @@ function ModalEditarAtleta({ isOpen, atleta, onClose, onSuccess }: ModalEditarAt
     fone: atleta.fone || '',
     esportePreferido: atleta.esportePreferido || '',
     esportesPratica: atleta.esportesPratica || [],
+    aceitaLembretesAgendamento: atleta.aceitaLembretesAgendamento || false,
   });
   const [points, setPoints] = useState<Arena[]>([]);
   const [pointIdPrincipal, setPointIdPrincipal] = useState<string>(atleta.pointIdPrincipal || '');
@@ -408,6 +409,7 @@ function ModalEditarAtleta({ isOpen, atleta, onClose, onSuccess }: ModalEditarAt
         fone: atleta.fone || '',
         esportePreferido: atleta.esportePreferido || '',
         esportesPratica: atleta.esportesPratica || [],
+        aceitaLembretesAgendamento: atleta.aceitaLembretesAgendamento || false,
       });
       setPointIdPrincipal(atleta.pointIdPrincipal || '');
       setPointIdsFrequentes(atleta.arenasFrequentes?.map(a => a.id) || []);
@@ -468,6 +470,7 @@ function ModalEditarAtleta({ isOpen, atleta, onClose, onSuccess }: ModalEditarAt
       fone: form.fone || undefined,
       esportePreferido: form.esportePreferido || null,
       esportesPratica: form.esportesPratica,
+      aceitaLembretesAgendamento: form.aceitaLembretesAgendamento,
       pointIdPrincipal: pointIdPrincipal || null,
       pointIdsFrequentes: arenasFrequentes,
     };
@@ -752,6 +755,7 @@ interface Atleta {
   }>;
   esportePreferido?: string;
   esportesPratica?: string[];
+  aceitaLembretesAgendamento?: boolean;
 }
 
 export default function AtletaPerfilPage() {
@@ -1000,6 +1004,23 @@ export default function AtletaPerfilPage() {
                         </span>
                       ))}
                     </div>
+                  </div>
+                )}
+                {atleta.aceitaLembretesAgendamento !== undefined && (
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <p className="text-sm text-gray-600 mb-1">Lembretes de Agendamento</p>
+                    <p className="font-semibold text-gray-900">
+                      {atleta.aceitaLembretesAgendamento ? (
+                        <span className="text-green-600">✓ Ativado</span>
+                      ) : (
+                        <span className="text-gray-500">Desativado</span>
+                      )}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {atleta.aceitaLembretesAgendamento
+                        ? 'Você receberá lembretes antes dos seus agendamentos'
+                        : 'Você não receberá lembretes de agendamento'}
+                    </p>
                   </div>
                 )}
               </div>

@@ -40,6 +40,7 @@ export interface Atleta {
   assinante?: boolean;
   esportePreferido?: string;
   esportesPratica?: string[];
+  aceitaLembretesAgendamento?: boolean;
 }
 
 export interface CriarAtletaPayload {
