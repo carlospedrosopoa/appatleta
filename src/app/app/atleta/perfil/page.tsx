@@ -385,6 +385,8 @@ function ModalEditarAtleta({ isOpen, atleta, onClose, onSuccess }: ModalEditarAt
     genero: atleta.genero || '',
     categoria: atleta.categoria || '',
     fone: atleta.fone || '',
+    esportePreferido: atleta.esportePreferido || '',
+    esportesPratica: atleta.esportesPratica || [],
   });
   const [points, setPoints] = useState<Arena[]>([]);
   const [pointIdPrincipal, setPointIdPrincipal] = useState<string>(atleta.pointIdPrincipal || '');
@@ -404,6 +406,8 @@ function ModalEditarAtleta({ isOpen, atleta, onClose, onSuccess }: ModalEditarAt
         genero: atleta.genero || '',
         categoria: atleta.categoria || '',
         fone: atleta.fone || '',
+        esportePreferido: atleta.esportePreferido || '',
+        esportesPratica: atleta.esportesPratica || [],
       });
       setPointIdPrincipal(atleta.pointIdPrincipal || '');
       setPointIdsFrequentes(atleta.arenasFrequentes?.map(a => a.id) || []);
@@ -462,6 +466,8 @@ function ModalEditarAtleta({ isOpen, atleta, onClose, onSuccess }: ModalEditarAt
       genero: form.genero ? form.genero.toUpperCase() : undefined,
       categoria: form.categoria || undefined,
       fone: form.fone || undefined,
+      esportePreferido: form.esportePreferido || null,
+      esportesPratica: form.esportesPratica,
       pointIdPrincipal: pointIdPrincipal || null,
       pointIdsFrequentes: arenasFrequentes,
     };
@@ -574,6 +580,61 @@ function ModalEditarAtleta({ isOpen, atleta, onClose, onSuccess }: ModalEditarAt
               className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
               disabled={salvando}
             />
+          </div>
+
+          <div>
+            <label className="block font-semibold mb-1">Esporte Preferido</label>
+            <select
+              name="esportePreferido"
+              value={form.esportePreferido}
+              onChange={handleChange}
+              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              disabled={salvando}
+            >
+              <option value="">Selecione seu esporte preferido</option>
+              <option value="Tênis">Tênis</option>
+              <option value="Futebol">Futebol</option>
+              <option value="Vôlei">Vôlei</option>
+              <option value="Basquete">Basquete</option>
+              <option value="Futsal">Futsal</option>
+              <option value="Futvolei">Futvolei</option>
+              <option value="Beach Tennis">Beach Tennis</option>
+              <option value="Padel">Padel</option>
+              <option value="Pickleball">Pickleball</option>
+              <option value="Squash">Squash</option>
+              <option value="Badminton">Badminton</option>
+              <option value="Handebol">Handebol</option>
+            </select>
+            <p className="text-xs text-gray-500 mt-1">Este será seu esporte padrão nas seleções</p>
+          </div>
+
+          <div>
+            <label className="block font-semibold mb-2">Esportes que Pratica</label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 border rounded p-3 max-h-64 overflow-y-auto">
+              {['Tênis', 'Futebol', 'Vôlei', 'Basquete', 'Futsal', 'Futvolei', 'Beach Tennis', 'Padel', 'Pickleball', 'Squash', 'Badminton', 'Handebol'].map((esporte) => (
+                <label key={esporte} className="flex items-center gap-2 p-2 border border-gray-300 rounded hover:bg-gray-50 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={form.esportesPratica.includes(esporte)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setForm({ ...form, esportesPratica: [...form.esportesPratica, esporte] });
+                      } else {
+                        setForm({ ...form, esportesPratica: form.esportesPratica.filter((e) => e !== esporte) });
+                      }
+                    }}
+                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                    disabled={salvando}
+                  />
+                  <span className="text-sm text-gray-700">{esporte}</span>
+                </label>
+              ))}
+            </div>
+            {form.esportesPratica.length > 0 && (
+              <p className="mt-2 text-xs text-gray-500">
+                Selecionados: {form.esportesPratica.join(', ')}
+              </p>
+            )}
           </div>
 
           {!carregandoArenas && points.length > 0 && (
@@ -689,6 +750,8 @@ interface Atleta {
     nome: string;
     logoUrl?: string | null;
   }>;
+  esportePreferido?: string;
+  esportesPratica?: string[];
 }
 
 export default function AtletaPerfilPage() {
@@ -916,6 +979,27 @@ export default function AtletaPerfilPage() {
                   <div className="p-4 bg-gray-50 rounded-lg sm:col-span-2">
                     <p className="text-sm text-gray-600 mb-1">Telefone</p>
                     <p className="font-semibold text-gray-900">{atleta.fone}</p>
+                  </div>
+                )}
+                {atleta.esportePreferido && (
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <p className="text-sm text-gray-600 mb-1">Esporte Preferido</p>
+                    <p className="font-semibold text-gray-900">{atleta.esportePreferido}</p>
+                  </div>
+                )}
+                {atleta.esportesPratica && atleta.esportesPratica.length > 0 && (
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <p className="text-sm text-gray-600 mb-1">Esportes que Pratica</p>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {atleta.esportesPratica.map((esporte, index) => (
+                        <span
+                          key={index}
+                          className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium"
+                        >
+                          {esporte}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
