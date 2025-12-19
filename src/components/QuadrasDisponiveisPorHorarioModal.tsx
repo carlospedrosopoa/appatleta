@@ -85,9 +85,13 @@ export default function QuadrasDisponiveisPorHorarioModal({
       
       // Filtrar por esporte selecionado, se houver
       if (esporteSelecionado) {
+        console.log('[FILTRO ESPORTE] Esporte selecionado:', esporteSelecionado);
+        console.log('[FILTRO ESPORTE] Total de quadras antes do filtro:', quadrasAtivas.length);
+        
         quadrasAtivas = quadrasAtivas.filter((q) => {
           // Se a quadra não tem tiposEsporte definido (null ou undefined), excluir
           if (!q.tiposEsporte) {
+            console.log(`[FILTRO ESPORTE] Quadra ${q.nome} - SEM tiposEsporte - EXCLUÍDA`);
             return false;
           }
           
@@ -99,18 +103,36 @@ export default function QuadrasDisponiveisPorHorarioModal({
             try {
               tiposEsporteArray = JSON.parse(q.tiposEsporte);
             } catch {
+              console.log(`[FILTRO ESPORTE] Quadra ${q.nome} - Erro ao fazer parse de tiposEsporte - EXCLUÍDA`);
               return false; // Se não conseguir fazer parse, excluir
             }
           }
           
           // Se o array estiver vazio, excluir
           if (tiposEsporteArray.length === 0) {
+            console.log(`[FILTRO ESPORTE] Quadra ${q.nome} - Array vazio - EXCLUÍDA`);
             return false;
           }
           
-          // Verificar se o esporte selecionado está na lista de esportes da quadra
-          return tiposEsporteArray.includes(esporteSelecionado);
+          // Normalizar strings para comparação (trim e case-insensitive)
+          const esporteSelecionadoNormalizado = esporteSelecionado.trim();
+          const atendeEsporte = tiposEsporteArray.some((esporte) => {
+            const esporteNormalizado = String(esporte).trim();
+            const match = esporteNormalizado.toLowerCase() === esporteSelecionadoNormalizado.toLowerCase();
+            return match;
+          });
+          
+          console.log(`[FILTRO ESPORTE] Quadra ${q.nome} - tiposEsporte:`, tiposEsporteArray, `- Atende ${esporteSelecionado}:`, atendeEsporte);
+          
+          if (!atendeEsporte) {
+            console.log(`[FILTRO ESPORTE] Quadra ${q.nome} - EXCLUÍDA (não atende o esporte)`);
+          }
+          
+          return atendeEsporte;
         });
+        
+        console.log('[FILTRO ESPORTE] Total de quadras após o filtro:', quadrasAtivas.length);
+        console.log('[FILTRO ESPORTE] Quadras filtradas:', quadrasAtivas.map(q => ({ nome: q.nome, tiposEsporte: q.tiposEsporte })));
       }
       
       if (quadrasAtivas.length === 0) {
