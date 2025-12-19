@@ -86,12 +86,30 @@ export default function QuadrasDisponiveisPorHorarioModal({
       // Filtrar por esporte selecionado, se houver
       if (esporteSelecionado) {
         quadrasAtivas = quadrasAtivas.filter((q) => {
-          // Se a quadra não tem tiposEsporte definido, incluir (compatibilidade)
-          if (!q.tiposEsporte || q.tiposEsporte.length === 0) {
-            return true;
+          // Se a quadra não tem tiposEsporte definido (null ou undefined), excluir
+          if (!q.tiposEsporte) {
+            return false;
           }
+          
+          // Garantir que tiposEsporte é um array
+          let tiposEsporteArray: string[] = [];
+          if (Array.isArray(q.tiposEsporte)) {
+            tiposEsporteArray = q.tiposEsporte;
+          } else if (typeof q.tiposEsporte === 'string') {
+            try {
+              tiposEsporteArray = JSON.parse(q.tiposEsporte);
+            } catch {
+              return false; // Se não conseguir fazer parse, excluir
+            }
+          }
+          
+          // Se o array estiver vazio, excluir
+          if (tiposEsporteArray.length === 0) {
+            return false;
+          }
+          
           // Verificar se o esporte selecionado está na lista de esportes da quadra
-          return q.tiposEsporte.includes(esporteSelecionado);
+          return tiposEsporteArray.includes(esporteSelecionado);
         });
       }
       
