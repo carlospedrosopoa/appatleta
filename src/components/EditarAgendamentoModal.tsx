@@ -1379,24 +1379,22 @@ export default function EditarAgendamentoModal({
                                   <h3 className="text-base font-semibold text-gray-900 truncate">
                                     {item.point.nome}
                                   </h3>
-                                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                                    <p className="text-sm text-gray-600">
-                                      {quadrasDisponiveis.length} {quadrasDisponiveis.length === 1 ? 'quadra disponível' : 'quadras disponíveis'}
-                                    </p>
-                                    <p className={`text-sm font-medium flex items-center gap-1 ${
-                                      distancia != null 
-                                        ? 'text-blue-600' 
-                                        : 'text-gray-500'
-                                    }`}>
-                                      <MapPin className="w-3 h-3" />
-                                      {distancia != null 
-                                        ? formatarDistancia(distancia)
-                                        : item.point.latitude != null && item.point.longitude != null
-                                          ? 'Localização não disponível'
-                                          : 'Coordenadas não cadastradas'
-                                      }
-                                    </p>
-                                  </div>
+                                  <p className="text-sm text-gray-600 mt-0.5">
+                                    {quadrasDisponiveis.length} {quadrasDisponiveis.length === 1 ? 'quadra disponível' : 'quadras disponíveis'}
+                                  </p>
+                                  <p className={`text-sm font-medium flex items-center gap-1 mt-0.5 ${
+                                    distancia != null 
+                                      ? 'text-blue-600' 
+                                      : 'text-gray-500'
+                                  }`}>
+                                    <MapPin className="w-3 h-3" />
+                                    {distancia != null 
+                                      ? formatarDistancia(distancia)
+                                      : item.point.latitude != null && item.point.longitude != null
+                                        ? 'Localização não disponível'
+                                        : 'Coordenadas não cadastradas'
+                                    }
+                                  </p>
                                 </div>
                               </div>
                             <div className="flex items-center gap-2 flex-shrink-0">
