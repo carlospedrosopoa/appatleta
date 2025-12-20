@@ -52,7 +52,16 @@ const Menu = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo/Brand */}
-          <div className="flex-shrink-0">
+          <div className="flex-shrink-0 flex items-center gap-2">
+            {typeof window !== 'undefined' && process.env.NEXT_PUBLIC_LOGO_URL && (
+              <Link href="/dashboard" className="flex items-center">
+                <img
+                  src={process.env.NEXT_PUBLIC_LOGO_URL}
+                  alt="Play Na Quadra"
+                  className="h-10 w-auto"
+                />
+              </Link>
+            )}
             <Link href="/dashboard" className="text-xl font-bold text-blue-600">
               Play Na Quadra
             </Link>

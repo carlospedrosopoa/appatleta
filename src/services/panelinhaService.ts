@@ -130,3 +130,15 @@ export async function removerAtletaPanelinha(panelinhaId: string, atletaId: stri
   }
 }
 
+// Exportar todas as funções como um objeto para facilitar o uso
+export const panelinhaService = {
+  buscarAtletas,
+  listarPanelinhas,
+  obterPanelinha,
+  criarPanelinha,
+  atualizarPanelinha,
+  deletarPanelinha,
+  adicionarAtletaPanelinha,
+  removerAtletaPanelinha,
+};
+

@@ -581,10 +581,21 @@ export default function PanelinhaPage() {
     }
   };
 
+  const logoUrl = typeof window !== 'undefined' ? process.env.NEXT_PUBLIC_LOGO_URL : null;
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">Minha Panelinha</h1>
+        <div className="flex items-center gap-3">
+          {logoUrl && (
+            <img
+              src={logoUrl}
+              alt="Play Na Quadra"
+              className="h-10 w-auto"
+            />
+          )}
+          <h1 className="text-3xl font-bold">Minha Panelinha</h1>
+        </div>
         <button
           onClick={() => setMostrarCriar(true)}
           className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
