@@ -548,16 +548,6 @@ function ModalDetalhesPanelinha({ isOpen, panelinha, onClose, onAtualizar, onDel
                 {panelinha.descricao && (
                   <p className="text-gray-600 mb-4">{panelinha.descricao}</p>
                 )}
-                {panelinha.ehCriador && (
-                  <div className="mb-4">
-                    <button
-                      onClick={() => setEditando(true)}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
-                    >
-                      Editar Panelinha
-                    </button>
-                  </div>
-                )}
               </>
             )}
           </div>
@@ -1185,6 +1175,8 @@ export default function PanelinhaPage() {
   const [mostrarBuscar, setMostrarBuscar] = useState(false);
   const [mostrarCriarJogo, setMostrarCriarJogo] = useState(false);
   const [panelinhaParaAcao, setPanelinhaParaAcao] = useState<Panelinha | null>(null);
+  const [mostrarEditar, setMostrarEditar] = useState(false);
+  const [panelinhaParaEditar, setPanelinhaParaEditar] = useState<Panelinha | null>(null);
 
   const carregarPanelinhas = async () => {
     setCarregando(true);
@@ -1384,6 +1376,20 @@ export default function PanelinhaPage() {
                   </button>
                   <button
                     onClick={async () => {
+                      try {
+                        const completa = await panelinhaService.obterPanelinha(panelinha.id);
+                        setPanelinhaParaEditar(completa);
+                        setMostrarEditar(true);
+                      } catch (error: any) {
+                        alert(error.data?.mensagem || error.message || 'Erro ao carregar panelinha');
+                      }
+                    }}
+                    className="px-3 py-1.5 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    onClick={async () => {
                       if (!confirm('Tem certeza que deseja deletar esta panelinha? Esta ação não pode ser desfeita.')) return;
                       try {
                         await panelinhaService.deletarPanelinha(panelinha.id);
@@ -1466,6 +1472,150 @@ export default function PanelinhaPage() {
           }}
         />
       )}
+
+      {mostrarEditar && panelinhaParaEditar && (
+        <ModalEditarPanelinha
+          isOpen={mostrarEditar}
+          panelinha={panelinhaParaEditar}
+          onClose={() => {
+            setMostrarEditar(false);
+            setPanelinhaParaEditar(null);
+          }}
+          onSuccess={() => {
+            setMostrarEditar(false);
+            setPanelinhaParaEditar(null);
+            carregarPanelinhas();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+interface ModalEditarPanelinhaProps {
+  isOpen: boolean;
+  panelinha: Panelinha;
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+function ModalEditarPanelinha({ isOpen, panelinha, onClose, onSuccess }: ModalEditarPanelinhaProps) {
+  const [nome, setNome] = useState(panelinha.nome);
+  const [descricao, setDescricao] = useState(panelinha.descricao || '');
+  const [esporte, setEsporte] = useState(panelinha.esporte || '');
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState('');
+
+  useEffect(() => {
+    if (isOpen) {
+      setNome(panelinha.nome);
+      setDescricao(panelinha.descricao || '');
+      setEsporte(panelinha.esporte || '');
+      setErro('');
+    }
+  }, [isOpen, panelinha]);
+
+  const handleSalvar = async () => {
+    if (!nome.trim()) {
+      setErro('Nome da panelinha é obrigatório');
+      return;
+    }
+
+    setSalvando(true);
+    setErro('');
+
+    try {
+      await panelinhaService.atualizarPanelinha(panelinha.id, {
+        nome: nome.trim(),
+        descricao: descricao.trim() || undefined,
+        esporte: esporte.trim() || undefined,
+      });
+      onSuccess();
+    } catch (error: any) {
+      console.error('Erro ao atualizar panelinha:', error);
+      setErro(error.data?.mensagem || error.message || 'Erro ao atualizar panelinha');
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+        <h2 className="text-2xl font-bold mb-4">Editar Panelinha</h2>
+        
+        {erro && (
+          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+            {erro}
+          </div>
+        )}
+
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Nome da Panelinha *
+          </label>
+          <input
+            type="text"
+            value={nome}
+            onChange={(e) => setNome(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Ex: Turma de Beach Tennis"
+            disabled={salvando}
+          />
+        </div>
+
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Esporte (opcional)
+          </label>
+          <select
+            value={esporte}
+            onChange={(e) => setEsporte(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            disabled={salvando}
+          >
+            <option value="">Selecione um esporte...</option>
+            {ESPORTES_DISPONIVEIS.map((esp) => (
+              <option key={esp} value={esp}>
+                {esp}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Descrição (opcional)
+          </label>
+          <textarea
+            value={descricao}
+            onChange={(e) => setDescricao(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            rows={3}
+            placeholder="Descreva sua panelinha..."
+            disabled={salvando}
+          />
+        </div>
+
+        <div className="flex gap-3 justify-end">
+          <button
+            onClick={onClose}
+            disabled={salvando}
+            className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 disabled:opacity-50"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleSalvar}
+            disabled={salvando}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+          >
+            {salvando ? 'Salvando...' : 'Salvar'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
