@@ -1301,11 +1301,23 @@ export default function PanelinhaPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {panelinhas.map((panelinha) => (
+          {panelinhas.map((panelinha, index) => {
+            // Array de cores de fundo variadas para diferenciar os cards
+            const coresFundo = [
+              'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200',
+              'bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200',
+              'bg-gradient-to-br from-green-50 to-emerald-50 border-green-200',
+              'bg-gradient-to-br from-orange-50 to-amber-50 border-orange-200',
+              'bg-gradient-to-br from-cyan-50 to-teal-50 border-cyan-200',
+              'bg-gradient-to-br from-rose-50 to-pink-50 border-rose-200',
+            ];
+            const corFundo = coresFundo[index % coresFundo.length];
+            
+            return (
             <div
               key={panelinha.id}
               onClick={() => handleAbrirDetalhes(panelinha)}
-              className="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow cursor-pointer"
+              className={`${corFundo} border-2 rounded-xl p-6 hover:shadow-xl transition-all cursor-pointer transform hover:-translate-y-1`}
             >
               <div className="flex items-start justify-between mb-4">
                 <h2 className="text-xl font-bold">{panelinha.nome}</h2>
@@ -1361,7 +1373,8 @@ export default function PanelinhaPage() {
                 </div>
               )}
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

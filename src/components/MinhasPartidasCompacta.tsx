@@ -25,8 +25,6 @@ export default function MinhasPartidasCompacta({
 }: Props) {
   const [showCardId, setShowCardId] = useState<string | null>(null);
   const [novaAberta, setNovaAberta] = useState(false);
-  const [agendarAberta, setAgendarAberta] = useState(false);
-  const [partidaParaAgendar, setPartidaParaAgendar] = useState<Partida | null>(null);
   const [page, setPage] = useState(1);
 
   const totalPages = Math.max(1, Math.ceil((partidas?.length || 0) / pageSize));
@@ -166,15 +164,6 @@ export default function MinhasPartidasCompacta({
                     >
                       Ver Card
                     </button>
-                    <button
-                      onClick={() => {
-                        setPartidaParaAgendar(p);
-                        setAgendarAberta(true);
-                      }}
-                      className="px-3 py-1.5 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors text-xs font-medium"
-                    >
-                      Agendar novo Jogo
-                    </button>
                   </div>
                 </div>
               </li>
@@ -228,32 +217,6 @@ export default function MinhasPartidasCompacta({
         atletaAtualId={atletaId}
       />
 
-      {agendarAberta && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 relative max-w-md w-full">
-            <button
-              className="absolute top-2 right-2 text-gray-600 hover:text-black text-lg"
-              onClick={() => {
-                setAgendarAberta(false);
-                setPartidaParaAgendar(null);
-              }}
-            >
-              ✕
-            </button>
-            <h3 className="text-lg font-semibold mb-4">Agendar novo Jogo</h3>
-            <p className="text-gray-600 mb-4">Funcionalidade em desenvolvimento...</p>
-            <button
-              onClick={() => {
-                setAgendarAberta(false);
-                setPartidaParaAgendar(null);
-              }}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            >
-              Fechar
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

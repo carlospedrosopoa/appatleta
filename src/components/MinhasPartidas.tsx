@@ -23,8 +23,6 @@ export default function MinhasPartidas({
 }: Props) {
   const [showCardId, setShowCardId] = useState<string | null>(null);
   const [modalNovaAberto, setModalNovaAberto] = useState(false);
-  const [agendarAberta, setAgendarAberta] = useState(false);
-  const [partidaParaAgendar, setPartidaParaAgendar] = useState<Partida | null>(null);
 
   const formatarPlacar = (p: Partida) => {
     if (p.gamesTime1 == null || p.gamesTime2 == null) return 'Ainda não informado';
@@ -135,15 +133,6 @@ export default function MinhasPartidas({
                   className="text-green-600 hover:underline text-xs"
                 >
                   Ver Card
-                </button>
-                <button
-                  onClick={() => {
-                    setPartidaParaAgendar(p);
-                    setAgendarAberta(true);
-                  }}
-                  className="text-purple-600 hover:underline text-xs"
-                >
-                  Agendar novo Jogo
                 </button>
               </div>
             </li>
