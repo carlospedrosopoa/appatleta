@@ -16,6 +16,7 @@ export default function AtletaLayout({ children }: { children: React.ReactNode }
   const navItems = [
     { to: '/app/atleta/agendamentos', label: 'Agendamentos' },
     { to: '/app/atleta/jogos', label: 'Meus Jogos' },
+    { to: '/app/atleta/panelinha', label: 'Minha Panelinha' },
     { to: '/app/atleta/consumo', label: 'Meu Consumo' },
     { to: '/app/atleta/dashboard', label: 'Dashboard' },
     { to: '/app/atleta/perfil', label: 'Meu Perfil' },
@@ -34,6 +35,13 @@ export default function AtletaLayout({ children }: { children: React.ReactNode }
       <header className="bg-white shadow-md sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
+            {typeof window !== 'undefined' && process.env.NEXT_PUBLIC_LOGO_URL && (
+              <img
+                src={process.env.NEXT_PUBLIC_LOGO_URL}
+                alt="Play Na Quadra"
+                className="h-8 w-auto"
+              />
+            )}
             <span className="text-lg sm:text-xl font-bold text-blue-600">Play Na Quadra</span>
             <span className="hidden sm:inline text-xs px-2 py-1 rounded-full bg-blue-50 text-blue-700 font-semibold">
               Área do Atleta

@@ -37,6 +37,13 @@ const Menu = () => {
 
   const filteredItems = menuItems.filter((item) => item.roles.includes(usuario?.role || ''));
 
+  // Debug: log para verificar filtragem
+  if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+    console.log('[Menu] Usuário role:', usuario?.role);
+    console.log('[Menu] Itens filtrados:', filteredItems.map(i => i.label));
+    console.log('[Menu] Todos os itens:', menuItems.map(i => ({ label: i.label, roles: i.roles })));
+  }
+
   const handleLogout = () => {
     setMobileMenuOpen(false);
     logout();
