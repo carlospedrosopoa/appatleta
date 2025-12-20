@@ -28,7 +28,7 @@ export default function AtletaLayout({ children }: { children: React.ReactNode }
     { to: '/app/atleta/jogos', label: 'Meus Jogos', icon: Trophy },
     { to: '/app/atleta/panelinha', label: 'Minha Panelinha', icon: PanelaIcon },
     { to: '/app/atleta/consumo', label: 'Meu Consumo', icon: ShoppingCart },
-    { to: '/app/atleta/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    // { to: '/app/atleta/dashboard', label: 'Dashboard', icon: LayoutDashboard }, // Oculto temporariamente
     { to: '/app/atleta/perfil', label: 'Meu Perfil', icon: User },
   ];
 

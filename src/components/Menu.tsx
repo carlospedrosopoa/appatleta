@@ -36,7 +36,7 @@ const Menu = () => {
   };
 
   const menuItems = [
-    { path: '/dashboard', label: 'Dashboard', roles: ['USER', 'ADMIN'], icon: LayoutDashboard },
+    // { path: '/dashboard', label: 'Dashboard', roles: ['USER', 'ADMIN'], icon: LayoutDashboard }, // Oculto temporariamente
     { path: '/perfil', label: 'Meu Perfil', roles: ['USER', 'ADMIN'], icon: User },
     { path: '/agendamentos', label: 'Agendamentos', roles: ['USER', 'ADMIN'], icon: Calendar },
     { path: '/app/atleta/panelinha', label: 'Minha Panelinha', roles: ['USER'], icon: PanelaIcon },
