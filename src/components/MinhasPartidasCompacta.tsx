@@ -13,6 +13,7 @@ interface Props {
   atletaId: string;
   onNovaPartida: () => void;
   pageSize?: number;
+  mostrarBotaoVerTodas?: boolean;
 }
 
 export default function MinhasPartidasCompacta({
@@ -22,6 +23,7 @@ export default function MinhasPartidasCompacta({
   atletaId,
   onNovaPartida,
   pageSize = 5,
+  mostrarBotaoVerTodas = true,
 }: Props) {
   const [showCardId, setShowCardId] = useState<string | null>(null);
   const [novaAberta, setNovaAberta] = useState(false);
@@ -82,7 +84,7 @@ export default function MinhasPartidasCompacta({
   return (
     <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-3">
-        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Minhas Últimas Partidas</h2>
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Minhas Partidas</h2>
         <div className="flex flex-col sm:flex-row gap-2">
           <button
             onClick={() => setNovaAberta(true)}
@@ -90,12 +92,14 @@ export default function MinhasPartidasCompacta({
           >
             + Nova Partida
           </button>
-          <button
-            onClick={onAbrirTodas}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-semibold"
-          >
-            Ver todas
-          </button>
+          {mostrarBotaoVerTodas && (
+            <button
+              onClick={onAbrirTodas}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-semibold"
+            >
+              Ver todas
+            </button>
+          )}
         </div>
       </div>
 

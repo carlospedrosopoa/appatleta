@@ -14,7 +14,6 @@ type Periodo = 'all' | '30' | '90' | '365';
 export default function MeusJogosPage() {
   const [atleta, setAtleta] = useState<Atleta | null>(null);
   const [partidas, setPartidas] = useState<Partida[]>([]);
-  const [mostrarPartidas, setMostrarPartidas] = useState(false);
   const [mostrarGrafico, setMostrarGrafico] = useState(false);
   const [modalPlacar, setModalPlacar] = useState(false);
   const [partidaSelecionada, setPartidaSelecionada] = useState<Partida | null>(null);
@@ -81,13 +80,14 @@ export default function MeusJogosPage() {
           <MinhasPartidasCompacta
             partidas={partidas}
             atletaId={atleta.id}
-            onAbrirTodas={() => setMostrarPartidas(true)}
+            onAbrirTodas={() => {}}
             onAtualizarPlacar={(p) => {
               setPartidaSelecionada(p);
               setModalPlacar(true);
             }}
             onNovaPartida={carregarPartidas}
-            pageSize={5}
+            pageSize={partidas.length}
+            mostrarBotaoVerTodas={false}
           />
 
           {/* Controles do gráfico */}
@@ -153,18 +153,6 @@ export default function MeusJogosPage() {
             </div>
           )}
 
-          {mostrarPartidas && (
-            <MinhasPartidas
-              partidas={partidas}
-              atletaId={atleta.id}
-              onAbrirTodas={() => setMostrarPartidas(false)}
-              onNovaPartida={carregarPartidas}
-              onAtualizarPlacar={(p) => {
-                setPartidaSelecionada(p);
-                setModalPlacar(true);
-              }}
-            />
-          )}
 
           {/* Modal de Atualizar Placar */}
           <AtualizarPlacarModal
