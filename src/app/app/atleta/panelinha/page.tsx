@@ -996,7 +996,16 @@ function ModalCriarJogo({ isOpen, panelinhaId, membros, onClose, onSuccess }: Mo
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col">
         <div className="p-6 border-b">
-          <h2 className="text-2xl font-bold mb-4">Montar Jogo</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold">Montar Jogo</h2>
+            <button
+              onClick={handleSalvar}
+              disabled={salvando}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 font-medium"
+            >
+              {salvando ? 'Salvando...' : 'Criar Jogo'}
+            </button>
+          </div>
           
           {erro && (
             <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
@@ -1262,13 +1271,6 @@ function ModalCriarJogo({ isOpen, panelinhaId, membros, onClose, onSuccess }: Mo
             className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 disabled:opacity-50"
           >
             Cancelar
-          </button>
-          <button
-            onClick={handleSalvar}
-            disabled={salvando}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-          >
-            {salvando ? 'Salvando...' : 'Criar Jogo'}
           </button>
         </div>
       </div>
