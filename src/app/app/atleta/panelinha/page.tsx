@@ -488,6 +488,13 @@ function ModalDetalhesPanelinha({ isOpen, panelinha, onClose, onAtualizar, onDel
               </div>
             ) : (
               <>
+                {panelinha.esporte && (
+                  <div className="mb-3">
+                    <span className="inline-block px-3 py-1 text-sm bg-blue-100 text-blue-800 rounded-full font-medium">
+                      {panelinha.esporte}
+                    </span>
+                  </div>
+                )}
                 {panelinha.descricao && (
                   <p className="text-gray-600 mb-4">{panelinha.descricao}</p>
                 )}
