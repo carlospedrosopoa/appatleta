@@ -7,8 +7,8 @@ import { api, setBasicCreds } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 
 function getRedirectRoute(role: string): string {
-  if (role === 'ADMIN') return '/app/admin';
-  if (role === 'ORGANIZER') return '/app/arena';
+  // Appatleta só permite usuários do tipo USER
+  // ADMIN e ORGANIZER não podem acessar este app
   return '/app/atleta';
 }
 
@@ -39,9 +39,14 @@ function LoginForm() {
   useEffect(() => {
     if (!authReady) return;
     
-    // Se já estiver autenticado, redireciona
+    // Se já estiver autenticado, verifica se é USER e redireciona
     if (autenticado && usuario) {
-      router.replace(getRedirectRoute(usuario.role || 'USER'));
+      if (usuario.role !== 'USER') {
+        // Se não for USER, fazer logout e mostrar erro
+        setErro('Este aplicativo é apenas para atletas. Organizadores e administradores devem usar o sistema web.');
+        return;
+      }
+      router.replace('/app/atleta');
     }
   }, [authReady, autenticado, usuario, router]);
 
@@ -61,6 +66,14 @@ function LoginForm() {
       const usuarioData = data.usuario || data.user;
       const tokenJWT = data.token; // Token JWT retornado pela API
       
+      // Validar se o usuário é do tipo USER (appatleta só permite USER)
+      const role = usuarioData?.role || 'USER';
+      if (role !== 'USER') {
+        setErro('Este aplicativo é apenas para atletas. Organizadores e administradores devem usar o sistema web.');
+        setCarregando(false);
+        return;
+      }
+      
       // Login via context (usa JWT como método preferido)
       login({
         token: tokenJWT || undefined, // Token JWT (método preferido)
@@ -69,9 +82,8 @@ function LoginForm() {
         basicCreds: tokenJWT ? null : { email: email.trim().toLowerCase(), senha: password },
       });
 
-      // Redireciona baseado no role
-      const role = usuarioData?.role || 'USER';
-      router.replace(getRedirectRoute(role));
+      // Redireciona para área do atleta
+      router.replace('/app/atleta');
     } catch (err: any) {
       // Tratamento de erros melhorado
       if (!err.response) {
