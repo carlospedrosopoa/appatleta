@@ -554,7 +554,8 @@ function ModalEditarAtleta({ isOpen, atleta, onClose, onSuccess }: ModalEditarAt
               </select>
             </div>
 
-            <div>
+            {/* Categoria oculta temporariamente - não faz sentido com múltiplos esportes */}
+            {/* <div>
               <label className="block font-semibold mb-1">Categoria</label>
               <select
                 name="categoria"
@@ -571,7 +572,7 @@ function ModalEditarAtleta({ isOpen, atleta, onClose, onSuccess }: ModalEditarAt
                 <option value="A">A</option>
                 <option value="PRO">PRO</option>
               </select>
-            </div>
+            </div> */}
           </div>
 
           <div>
@@ -979,11 +980,12 @@ export default function AtletaPerfilPage() {
                   </div>
                 )}
                 <p className="mt-4 text-lg font-semibold text-gray-900">{atleta.nome}</p>
-                {atleta.categoria && (
+                {/* Categoria oculta temporariamente - não faz sentido com múltiplos esportes */}
+                {/* {atleta.categoria && (
                   <span className="mt-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
                     {atleta.categoria}
                   </span>
-                )}
+                )} */}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
