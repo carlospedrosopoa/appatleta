@@ -932,12 +932,13 @@ function ModalCriarJogo({ isOpen, panelinhaId, membros, onClose, onSuccess }: Mo
     }
 
     // Adicionar na próxima posição disponível
+    // Ordem: Time 1 completo (Jogador 1, Jogador 2) → Time 2 completo (Jogador 1, Jogador 2)
     if (!atleta1Id) {
       setAtleta1Id(atletaId);
-    } else if (!atleta2Id) {
-      setAtleta2Id(atletaId);
     } else if (!atleta3Id) {
       setAtleta3Id(atletaId);
+    } else if (!atleta2Id) {
+      setAtleta2Id(atletaId);
     } else if (!atleta4Id) {
       setAtleta4Id(atletaId);
     }
@@ -1106,7 +1107,7 @@ function ModalCriarJogo({ isOpen, panelinhaId, membros, onClose, onSuccess }: Mo
           {/* Lista de atletas para seleção */}
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-3">
-              Clique nos atletas para formar as duplas (ordem: Time 1 - Jogador 1, Time 2 - Jogador 1, Time 1 - Jogador 2, Time 2 - Jogador 2)
+              Clique nos atletas para formar as duplas (ordem: Time 1 completo, depois Time 2)
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-64 overflow-y-auto p-2 border border-gray-200 rounded-lg">
               {membros.map((membro) => {
