@@ -34,6 +34,12 @@ export default function ProtectedRoute({
       return;
     }
 
+    // Appatleta só permite usuários do tipo USER
+    if (usuario.role !== 'USER') {
+      router.replace('/unauthorized');
+      return;
+    }
+
     const rolesToCheck: Role[] =
       allowedRoles && allowedRoles.length
         ? allowedRoles
@@ -61,6 +67,11 @@ export default function ProtectedRoute({
   }
 
   if (!autenticado || !usuario) {
+    return null;
+  }
+
+  // Appatleta só permite usuários do tipo USER
+  if (usuario.role !== 'USER') {
     return null;
   }
 
