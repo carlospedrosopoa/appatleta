@@ -5,7 +5,17 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useState } from 'react';
-import { Menu as MenuIcon, X } from 'lucide-react';
+import { 
+  Menu as MenuIcon, 
+  X, 
+  Calendar, 
+  Trophy, 
+  UtensilsCrossed, 
+  ShoppingCart, 
+  LayoutDashboard, 
+  User, 
+  LogOut 
+} from 'lucide-react';
 
 export default function AtletaLayout({ children }: { children: React.ReactNode }) {
   const { usuario, logout } = useAuth();
@@ -14,12 +24,12 @@ export default function AtletaLayout({ children }: { children: React.ReactNode }
   const [menuAberto, setMenuAberto] = useState(false);
 
   const navItems = [
-    { to: '/app/atleta/agendamentos', label: 'Agendamentos' },
-    { to: '/app/atleta/jogos', label: 'Meus Jogos' },
-    { to: '/app/atleta/panelinha', label: 'Minha Panelinha' },
-    { to: '/app/atleta/consumo', label: 'Meu Consumo' },
-    { to: '/app/atleta/dashboard', label: 'Dashboard' },
-    { to: '/app/atleta/perfil', label: 'Meu Perfil' },
+    { to: '/app/atleta/agendamentos', label: 'Agendamentos', icon: Calendar },
+    { to: '/app/atleta/jogos', label: 'Meus Jogos', icon: Trophy },
+    { to: '/app/atleta/panelinha', label: 'Minha Panelinha', icon: UtensilsCrossed },
+    { to: '/app/atleta/consumo', label: 'Meu Consumo', icon: ShoppingCart },
+    { to: '/app/atleta/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { to: '/app/atleta/perfil', label: 'Meu Perfil', icon: User },
   ];
 
   const handleLogout = () => {
@@ -65,28 +75,33 @@ export default function AtletaLayout({ children }: { children: React.ReactNode }
         {menuAberto && (
           <nav className="bg-white border-t border-gray-100 shadow-md">
             <div className="max-w-7xl mx-auto px-4 py-2 space-y-1">
-              {navItems.map((item) => (
-                <Link
-                  key={item.to}
-                  href={item.to}
-                  onClick={() => setMenuAberto(false)}
-                  className={`block px-3 py-2 rounded-md text-sm font-medium ${
-                    isActive(item.to)
-                      ? 'bg-blue-100 text-blue-700'
-                      : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              ))}
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.to}
+                    href={item.to}
+                    onClick={() => setMenuAberto(false)}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      isActive(item.to)
+                        ? 'bg-blue-100 text-blue-700'
+                        : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                    }`}
+                  >
+                    {Icon && <Icon className="w-5 h-5" />}
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
               <button
                 onClick={() => {
                   setMenuAberto(false);
                   handleLogout();
                 }}
-                className="w-full text-left px-3 py-2 rounded-md text-sm font-medium text-red-600 hover:bg-red-50"
+                className="flex items-center gap-3 w-full text-left px-3 py-2 rounded-md text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
               >
-                Sair
+                <LogOut className="w-5 h-5" />
+                <span>Sair</span>
               </button>
             </div>
           </nav>

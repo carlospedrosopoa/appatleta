@@ -6,7 +6,21 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { Menu as MenuIcon, X } from 'lucide-react';
+import { 
+  Menu as MenuIcon, 
+  X, 
+  LayoutDashboard, 
+  User, 
+  Calendar, 
+  UtensilsCrossed, 
+  ShoppingCart, 
+  Building2, 
+  Users, 
+  Store, 
+  MapPin, 
+  DollarSign, 
+  LogOut 
+} from 'lucide-react';
 
 const Menu = () => {
   const { usuario, logout } = useAuth();
@@ -22,17 +36,17 @@ const Menu = () => {
   };
 
   const menuItems = [
-    { path: '/dashboard', label: 'Dashboard', roles: ['USER', 'ADMIN'] },
-    { path: '/perfil', label: 'Meu Perfil', roles: ['USER', 'ADMIN'] },
-    { path: '/agendamentos', label: 'Agendamentos', roles: ['USER', 'ADMIN'] },
-    { path: '/app/atleta/panelinha', label: 'Minha Panelinha', roles: ['USER'] },
-    { path: '/app/atleta/consumo', label: 'Meu Consumo', roles: ['USER'] },
-    { path: '/app/arena', label: 'Área da Arena', roles: ['ORGANIZER'] },
-    { path: '/usuarios', label: 'Usuários', roles: ['ADMIN'] },
-    { path: '/atletas', label: 'Atletas', roles: ['ADMIN'] },
-    { path: '/app/admin/points', label: 'Estabelecimentos', roles: ['ADMIN'] },
-    { path: '/app/admin/quadras', label: 'Quadras', roles: ['ADMIN'] },
-    { path: '/app/admin/tabela-precos', label: 'Tabela de Preços', roles: ['ADMIN'] },
+    { path: '/dashboard', label: 'Dashboard', roles: ['USER', 'ADMIN'], icon: LayoutDashboard },
+    { path: '/perfil', label: 'Meu Perfil', roles: ['USER', 'ADMIN'], icon: User },
+    { path: '/agendamentos', label: 'Agendamentos', roles: ['USER', 'ADMIN'], icon: Calendar },
+    { path: '/app/atleta/panelinha', label: 'Minha Panelinha', roles: ['USER'], icon: UtensilsCrossed },
+    { path: '/app/atleta/consumo', label: 'Meu Consumo', roles: ['USER'], icon: ShoppingCart },
+    { path: '/app/arena', label: 'Área da Arena', roles: ['ORGANIZER'], icon: Building2 },
+    { path: '/usuarios', label: 'Usuários', roles: ['ADMIN'], icon: Users },
+    { path: '/atletas', label: 'Atletas', roles: ['ADMIN'], icon: Users },
+    { path: '/app/admin/points', label: 'Estabelecimentos', roles: ['ADMIN'], icon: Store },
+    { path: '/app/admin/quadras', label: 'Quadras', roles: ['ADMIN'], icon: MapPin },
+    { path: '/app/admin/tabela-precos', label: 'Tabela de Preços', roles: ['ADMIN'], icon: DollarSign },
   ];
 
   const filteredItems = menuItems.filter((item) => item.roles.includes(usuario?.role || ''));
@@ -96,25 +110,30 @@ const Menu = () => {
       {mobileMenuOpen && (
         <div>
           <div className="px-2 pt-2 pb-3 space-y-1 bg-white border-t shadow-md">
-            {filteredItems.map((item) => (
-              <Link
-                key={item.path}
-                href={item.path}
-                onClick={() => setMobileMenuOpen(false)}
-                className={`block px-3 py-2 rounded-md text-base font-medium ${
-                  isActive(item.path)
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-                }`}
-              >
-                {item.label}
-              </Link>
-            ))}
+            {filteredItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.path}
+                  href={item.path}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`flex items-center gap-3 px-3 py-2 rounded-md text-base font-medium transition-colors ${
+                    isActive(item.path)
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                  }`}
+                >
+                  {Icon && <Icon className="w-5 h-5" />}
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
             <button
               onClick={handleLogout}
-              className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-600 hover:bg-red-50"
+              className="flex items-center gap-3 w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-600 hover:bg-red-50 transition-colors"
             >
-              Sair
+              <LogOut className="w-5 h-5" />
+              <span>Sair</span>
             </button>
           </div>
         </div>
