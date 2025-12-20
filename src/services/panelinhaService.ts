@@ -47,6 +47,56 @@ export interface AtualizarPanelinhaPayload {
   esporte?: string;
 }
 
+export interface RankingPanelinha {
+  id: string;
+  panelinhaId: string;
+  atletaId: string;
+  pontuacao: number;
+  vitorias: number;
+  derrotas: number;
+  derrotasTieBreak: number;
+  partidasJogadas: number;
+  saldoGames: number;
+  gamesFeitos: number;
+  gamesSofridos: number;
+  posicao: number | null;
+  ultimaAtualizacao: string;
+  atleta: {
+    id: string;
+    nome: string;
+    fotoUrl?: string;
+  };
+}
+
+export interface PartidaPanelinha {
+  id: string;
+  data: string;
+  local: string;
+  gamesTime1: number | null;
+  gamesTime2: number | null;
+  tiebreakTime1: number | null;
+  tiebreakTime2: number | null;
+  createdAt: string;
+  updatedAt: string;
+  atleta1?: { id: string; nome: string; fotoUrl?: string } | null;
+  atleta2?: { id: string; nome: string; fotoUrl?: string } | null;
+  atleta3?: { id: string; nome: string; fotoUrl?: string } | null;
+  atleta4?: { id: string; nome: string; fotoUrl?: string } | null;
+}
+
+export interface CriarJogoPanelinhaPayload {
+  data: string;
+  local: string;
+  atleta1Id: string;
+  atleta2Id: string;
+  atleta3Id?: string;
+  atleta4Id?: string;
+  gamesTime1?: number | null;
+  gamesTime2?: number | null;
+  tiebreakTime1?: number | null;
+  tiebreakTime2?: number | null;
+}
+
 // Buscar atletas por nome ou telefone
 export async function buscarAtletas(termo: string, limite: number = 20): Promise<AtletaBusca[]> {
   try {
@@ -133,6 +183,50 @@ export async function removerAtletaPanelinha(panelinhaId: string, atletaId: stri
   }
 }
 
+// Obter ranking da panelinha
+export async function obterRankingPanelinha(panelinhaId: string): Promise<RankingPanelinha[]> {
+  try {
+    const { data } = await api.get(`/user/panelinha/${panelinhaId}/ranking`);
+    return data.ranking || [];
+  } catch (error: any) {
+    console.error('Erro ao obter ranking:', error);
+    throw error;
+  }
+}
+
+// Recalcular ranking da panelinha
+export async function recalcularRankingPanelinha(panelinhaId: string): Promise<RankingPanelinha[]> {
+  try {
+    const { data } = await api.put(`/user/panelinha/${panelinhaId}/ranking`);
+    return data.ranking || [];
+  } catch (error: any) {
+    console.error('Erro ao recalcular ranking:', error);
+    throw error;
+  }
+}
+
+// Listar jogos da panelinha
+export async function listarJogosPanelinha(panelinhaId: string): Promise<PartidaPanelinha[]> {
+  try {
+    const { data } = await api.get(`/user/panelinha/${panelinhaId}/jogos`);
+    return data.jogos || [];
+  } catch (error: any) {
+    console.error('Erro ao listar jogos:', error);
+    throw error;
+  }
+}
+
+// Criar jogo na panelinha
+export async function criarJogoPanelinha(panelinhaId: string, payload: CriarJogoPanelinhaPayload): Promise<PartidaPanelinha> {
+  try {
+    const { data } = await api.post(`/user/panelinha/${panelinhaId}/jogos`, payload);
+    return data.partida;
+  } catch (error: any) {
+    console.error('Erro ao criar jogo:', error);
+    throw error;
+  }
+}
+
 // Exportar todas as funções como um objeto para facilitar o uso
 export const panelinhaService = {
   buscarAtletas,
@@ -143,5 +237,9 @@ export const panelinhaService = {
   deletarPanelinha,
   adicionarAtletaPanelinha,
   removerAtletaPanelinha,
+  obterRankingPanelinha,
+  recalcularRankingPanelinha,
+  listarJogosPanelinha,
+  criarJogoPanelinha,
 };
 

@@ -6,7 +6,10 @@ import {
   panelinhaService, 
   type Panelinha, 
   type AtletaBusca,
-  type PanelinhaMembro 
+  type PanelinhaMembro,
+  type RankingPanelinha,
+  type PartidaPanelinha,
+  type CriarJogoPanelinhaPayload
 } from '@/services/panelinhaService';
 
 interface ModalCriarPanelinhaProps {
@@ -311,7 +314,9 @@ interface ModalDetalhesPanelinhaProps {
 }
 
 function ModalDetalhesPanelinha({ isOpen, panelinha, onClose, onAtualizar, onDeletar }: ModalDetalhesPanelinhaProps) {
+  const [abaAtiva, setAbaAtiva] = useState<'membros' | 'ranking' | 'jogos'>('membros');
   const [mostrarBuscar, setMostrarBuscar] = useState(false);
+  const [mostrarCriarJogo, setMostrarCriarJogo] = useState(false);
   const [editando, setEditando] = useState(false);
   const [nome, setNome] = useState('');
   const [descricao, setDescricao] = useState('');
@@ -319,6 +324,10 @@ function ModalDetalhesPanelinha({ isOpen, panelinha, onClose, onAtualizar, onDel
   const [salvando, setSalvando] = useState(false);
   const [removendo, setRemovendo] = useState<string | null>(null);
   const [erro, setErro] = useState('');
+  const [ranking, setRanking] = useState<RankingPanelinha[]>([]);
+  const [jogos, setJogos] = useState<PartidaPanelinha[]>([]);
+  const [carregandoRanking, setCarregandoRanking] = useState(false);
+  const [carregandoJogos, setCarregandoJogos] = useState(false);
 
   useEffect(() => {
     if (panelinha) {
@@ -326,8 +335,49 @@ function ModalDetalhesPanelinha({ isOpen, panelinha, onClose, onAtualizar, onDel
       setDescricao(panelinha.descricao || '');
       setEsporte(panelinha.esporte || '');
       setEditando(false);
+      setAbaAtiva('membros');
     }
   }, [panelinha]);
+
+  useEffect(() => {
+    if (panelinha && abaAtiva === 'ranking') {
+      carregarRanking();
+    }
+  }, [panelinha, abaAtiva]);
+
+  useEffect(() => {
+    if (panelinha && abaAtiva === 'jogos') {
+      carregarJogos();
+    }
+  }, [panelinha, abaAtiva]);
+
+  const carregarRanking = async () => {
+    if (!panelinha) return;
+    setCarregandoRanking(true);
+    try {
+      const rankingData = await panelinhaService.obterRankingPanelinha(panelinha.id);
+      setRanking(rankingData);
+    } catch (error: any) {
+      console.error('Erro ao carregar ranking:', error);
+      setErro(error.data?.mensagem || error.message || 'Erro ao carregar ranking');
+    } finally {
+      setCarregandoRanking(false);
+    }
+  };
+
+  const carregarJogos = async () => {
+    if (!panelinha) return;
+    setCarregandoJogos(true);
+    try {
+      const jogosData = await panelinhaService.listarJogosPanelinha(panelinha.id);
+      setJogos(jogosData);
+    } catch (error: any) {
+      console.error('Erro ao carregar jogos:', error);
+      setErro(error.data?.mensagem || error.message || 'Erro ao carregar jogos');
+    } finally {
+      setCarregandoJogos(false);
+    }
+  };
 
   const handleSalvar = async () => {
     if (!panelinha) return;
@@ -507,12 +557,41 @@ function ModalDetalhesPanelinha({ isOpen, panelinha, onClose, onAtualizar, onDel
                       >
                         Editar
                       </button>
-                      <button
-                        onClick={() => setMostrarBuscar(true)}
-                        className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-                      >
-                        + Adicionar Atleta
-                      </button>
+                      {abaAtiva === 'membros' && (
+                        <button
+                          onClick={() => setMostrarBuscar(true)}
+                          className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                        >
+                          + Adicionar Atleta
+                        </button>
+                      )}
+                      {abaAtiva === 'jogos' && (
+                        <button
+                          onClick={() => setMostrarCriarJogo(true)}
+                          className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                        >
+                          + Novo Jogo
+                        </button>
+                      )}
+                      {abaAtiva === 'ranking' && (
+                        <button
+                          onClick={async () => {
+                            setCarregandoRanking(true);
+                            try {
+                              await panelinhaService.recalcularRankingPanelinha(panelinha.id);
+                              await carregarRanking();
+                            } catch (error: any) {
+                              alert(error.data?.mensagem || error.message || 'Erro ao recalcular ranking');
+                            } finally {
+                              setCarregandoRanking(false);
+                            }
+                          }}
+                          disabled={carregandoRanking}
+                          className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50"
+                        >
+                          {carregandoRanking ? 'Recalculando...' : 'Recalcular Ranking'}
+                        </button>
+                      )}
                       <button
                         onClick={handleDeletar}
                         disabled={salvando}
@@ -527,55 +606,278 @@ function ModalDetalhesPanelinha({ isOpen, panelinha, onClose, onAtualizar, onDel
             )}
           </div>
 
+          {/* Abas */}
+          <div className="border-b border-gray-200 px-6">
+            <div className="flex gap-4">
+              <button
+                onClick={() => setAbaAtiva('membros')}
+                className={`px-4 py-2 font-medium border-b-2 transition-colors ${
+                  abaAtiva === 'membros'
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Membros ({panelinha.totalMembros})
+              </button>
+              <button
+                onClick={() => setAbaAtiva('ranking')}
+                className={`px-4 py-2 font-medium border-b-2 transition-colors ${
+                  abaAtiva === 'ranking'
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Ranking
+              </button>
+              <button
+                onClick={() => setAbaAtiva('jogos')}
+                className={`px-4 py-2 font-medium border-b-2 transition-colors ${
+                  abaAtiva === 'jogos'
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Jogos
+              </button>
+            </div>
+          </div>
+
           <div className="flex-1 overflow-y-auto p-6">
-            <h3 className="font-semibold text-lg mb-4">
-              Membros ({panelinha.totalMembros})
-            </h3>
-            {panelinha.membros.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">
-                Nenhum membro ainda. Adicione atletas para começar!
-              </p>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {panelinha.membros.map((membro) => (
-                  <div
-                    key={membro.id}
-                    className="border border-gray-200 rounded-lg p-4 flex items-center gap-4"
-                  >
-                    <div className="flex-shrink-0">
-                      {membro.fotoUrl ? (
-                        <img
-                          src={membro.fotoUrl}
-                          alt={membro.nome}
-                          className="w-16 h-16 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-16 h-16 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-semibold">
-                          {membro.nome.charAt(0).toUpperCase()}
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-semibold text-gray-900 truncate">{membro.nome}</h4>
-                      {membro.telefone && (
-                        <p className="text-sm text-gray-600 truncate">{membro.telefone}</p>
-                      )}
-                      {membro.categoria && (
-                        <p className="text-xs text-gray-500 mt-1">{membro.categoria}</p>
-                      )}
-                    </div>
-                    {panelinha.ehCriador && membro.id !== panelinha.atletaIdCriador && (
-                      <button
-                        onClick={() => handleRemoverAtleta(membro.id)}
-                        disabled={removendo === membro.id}
-                        className="px-3 py-1 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
+            {abaAtiva === 'membros' && (
+              <>
+                {panelinha.membros.length === 0 ? (
+                  <p className="text-gray-500 text-center py-8">
+                    Nenhum membro ainda. Adicione atletas para começar!
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {panelinha.membros.map((membro) => (
+                      <div
+                        key={membro.id}
+                        className="border border-gray-200 rounded-lg p-4 flex items-center gap-4"
                       >
-                        {removendo === membro.id ? 'Removendo...' : 'Remover'}
-                      </button>
-                    )}
+                        <div className="flex-shrink-0">
+                          {membro.fotoUrl ? (
+                            <img
+                              src={membro.fotoUrl}
+                              alt={membro.nome}
+                              className="w-16 h-16 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-16 h-16 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-semibold">
+                              {membro.nome.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-gray-900 truncate">{membro.nome}</h4>
+                          {membro.telefone && (
+                            <p className="text-sm text-gray-600 truncate">{membro.telefone}</p>
+                          )}
+                          {membro.categoria && (
+                            <p className="text-xs text-gray-500 mt-1">{membro.categoria}</p>
+                          )}
+                        </div>
+                        {panelinha.ehCriador && membro.id !== panelinha.atletaIdCriador && (
+                          <button
+                            onClick={() => handleRemoverAtleta(membro.id)}
+                            disabled={removendo === membro.id}
+                            className="px-3 py-1 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
+                          >
+                            {removendo === membro.id ? 'Removendo...' : 'Remover'}
+                          </button>
+                        )}
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                )}
+              </>
+            )}
+
+            {abaAtiva === 'ranking' && (
+              <>
+                {carregandoRanking ? (
+                  <div className="text-center py-8 text-gray-500">
+                    Carregando ranking...
+                  </div>
+                ) : ranking.length === 0 ? (
+                  <p className="text-gray-500 text-center py-8">
+                    Nenhum jogo registrado ainda. Crie jogos para ver o ranking!
+                  </p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pos</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Atleta</th>
+                          <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Pontos</th>
+                          <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">V</th>
+                          <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">D</th>
+                          <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">DTB</th>
+                          <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Saldo</th>
+                          <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Jogos</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {ranking.map((r) => (
+                          <tr key={r.id} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 text-sm font-bold text-gray-900">
+                              {r.posicao || '-'}
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-3">
+                                {r.atleta.fotoUrl ? (
+                                  <img
+                                    src={r.atleta.fotoUrl}
+                                    alt={r.atleta.nome}
+                                    className="w-10 h-10 rounded-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-semibold text-sm">
+                                    {r.atleta.nome.charAt(0).toUpperCase()}
+                                  </div>
+                                )}
+                                <span className="text-sm font-medium text-gray-900">{r.atleta.nome}</span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-center text-sm font-bold text-blue-600">
+                              {r.pontuacao}
+                            </td>
+                            <td className="px-4 py-3 text-center text-sm text-gray-600">
+                              {r.vitorias}
+                            </td>
+                            <td className="px-4 py-3 text-center text-sm text-gray-600">
+                              {r.derrotas}
+                            </td>
+                            <td className="px-4 py-3 text-center text-sm text-gray-600">
+                              {r.derrotasTieBreak}
+                            </td>
+                            <td className="px-4 py-3 text-center text-sm font-medium">
+                              <span className={r.saldoGames >= 0 ? 'text-green-600' : 'text-red-600'}>
+                                {r.saldoGames > 0 ? '+' : ''}{r.saldoGames}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-center text-sm text-gray-600">
+                              {r.partidasJogadas}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </>
+            )}
+
+            {abaAtiva === 'jogos' && (
+              <>
+                {carregandoJogos ? (
+                  <div className="text-center py-8 text-gray-500">
+                    Carregando jogos...
+                  </div>
+                ) : jogos.length === 0 ? (
+                  <p className="text-gray-500 text-center py-8">
+                    Nenhum jogo registrado ainda. Crie o primeiro jogo!
+                  </p>
+                ) : (
+                  <div className="space-y-4">
+                    {jogos.map((jogo) => {
+                      const time1 = [jogo.atleta1, jogo.atleta3].filter(Boolean);
+                      const time2 = [jogo.atleta2, jogo.atleta4].filter(Boolean);
+                      const temPlacar = jogo.gamesTime1 !== null && jogo.gamesTime2 !== null;
+                      const teveTieBreak = jogo.tiebreakTime1 !== null || jogo.tiebreakTime2 !== null;
+                      
+                      return (
+                        <div key={jogo.id} className="border border-gray-200 rounded-lg p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="text-sm text-gray-500">
+                              {new Date(jogo.data).toLocaleDateString('pt-BR', {
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </div>
+                            <div className="text-sm text-gray-500">{jogo.local}</div>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <div className="text-xs text-gray-500 mb-1">Time 1</div>
+                              <div className="space-y-1">
+                                {time1.map((atleta) => (
+                                  <div key={atleta?.id} className="flex items-center gap-2">
+                                    {atleta?.fotoUrl ? (
+                                      <img
+                                        src={atleta.fotoUrl}
+                                        alt={atleta.nome}
+                                        className="w-6 h-6 rounded-full object-cover"
+                                      />
+                                    ) : (
+                                      <div className="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 text-xs">
+                                        {atleta?.nome.charAt(0).toUpperCase()}
+                                      </div>
+                                    )}
+                                    <span className="text-sm">{atleta?.nome}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-gray-500 mb-1">Time 2</div>
+                              <div className="space-y-1">
+                                {time2.map((atleta) => (
+                                  <div key={atleta?.id} className="flex items-center gap-2">
+                                    {atleta?.fotoUrl ? (
+                                      <img
+                                        src={atleta.fotoUrl}
+                                        alt={atleta.nome}
+                                        className="w-6 h-6 rounded-full object-cover"
+                                      />
+                                    ) : (
+                                      <div className="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 text-xs">
+                                        {atleta?.nome.charAt(0).toUpperCase()}
+                                      </div>
+                                    )}
+                                    <span className="text-sm">{atleta?.nome}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {temPlacar && (
+                            <div className="mt-3 pt-3 border-t border-gray-200">
+                              <div className="flex items-center justify-center gap-4">
+                                <div className="text-center">
+                                  <div className="text-2xl font-bold text-blue-600">
+                                    {jogo.gamesTime1}
+                                  </div>
+                                  <div className="text-xs text-gray-500">Time 1</div>
+                                </div>
+                                <div className="text-xl font-bold text-gray-400">x</div>
+                                <div className="text-center">
+                                  <div className="text-2xl font-bold text-blue-600">
+                                    {jogo.gamesTime2}
+                                  </div>
+                                  <div className="text-xs text-gray-500">Time 2</div>
+                                </div>
+                                {teveTieBreak && (
+                                  <div className="text-xs text-gray-500 ml-2">
+                                    (TB: {jogo.tiebreakTime1 || 0} x {jogo.tiebreakTime2 || 0})
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -593,7 +895,327 @@ function ModalDetalhesPanelinha({ isOpen, panelinha, onClose, onAtualizar, onDel
           }}
         />
       )}
+
+      {mostrarCriarJogo && (
+        <ModalCriarJogo
+          isOpen={mostrarCriarJogo}
+          panelinhaId={panelinha.id}
+          membros={panelinha.membros}
+          onClose={() => setMostrarCriarJogo(false)}
+          onSuccess={() => {
+            setMostrarCriarJogo(false);
+            carregarJogos();
+            onAtualizar(); // Atualizar para recarregar ranking se necessário
+          }}
+        />
+      )}
     </>
+  );
+}
+
+interface ModalCriarJogoProps {
+  isOpen: boolean;
+  panelinhaId: string;
+  membros: PanelinhaMembro[];
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+function ModalCriarJogo({ isOpen, panelinhaId, membros, onClose, onSuccess }: ModalCriarJogoProps) {
+  const [formato, setFormato] = useState<'simples' | 'duplas'>('duplas');
+  const [atleta1Id, setAtleta1Id] = useState('');
+  const [atleta2Id, setAtleta2Id] = useState('');
+  const [atleta3Id, setAtleta3Id] = useState('');
+  const [atleta4Id, setAtleta4Id] = useState('');
+  const [data, setData] = useState(() => {
+    const hoje = new Date();
+    hoje.setHours(hoje.getHours() + 1);
+    return hoje.toISOString().slice(0, 16);
+  });
+  const [local, setLocal] = useState('');
+  const [gamesTime1, setGamesTime1] = useState<number | null>(null);
+  const [gamesTime2, setGamesTime2] = useState<number | null>(null);
+  const [tiebreakTime1, setTiebreakTime1] = useState<number | null>(null);
+  const [tiebreakTime2, setTiebreakTime2] = useState<number | null>(null);
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState('');
+
+  useEffect(() => {
+    if (formato === 'simples') {
+      setAtleta3Id('');
+      setAtleta4Id('');
+    }
+  }, [formato]);
+
+  const handleSalvar = async () => {
+    if (!atleta1Id || !atleta2Id) {
+      setErro('Selecione pelo menos 2 atletas');
+      return;
+    }
+
+    if (formato === 'duplas' && (!atleta3Id || !atleta4Id)) {
+      setErro('Para duplas, selecione 4 atletas');
+      return;
+    }
+
+    if (!data || !local.trim()) {
+      setErro('Data e local são obrigatórios');
+      return;
+    }
+
+    setSalvando(true);
+    setErro('');
+
+    try {
+      const payload: CriarJogoPanelinhaPayload = {
+        data: new Date(data).toISOString(),
+        local: local.trim(),
+        atleta1Id,
+        atleta2Id,
+        atleta3Id: formato === 'duplas' ? atleta3Id : undefined,
+        atleta4Id: formato === 'duplas' ? atleta4Id : undefined,
+        gamesTime1: gamesTime1 !== null && gamesTime1 !== undefined ? gamesTime1 : null,
+        gamesTime2: gamesTime2 !== null && gamesTime2 !== undefined ? gamesTime2 : null,
+        tiebreakTime1: tiebreakTime1 !== null && tiebreakTime1 !== undefined ? tiebreakTime1 : null,
+        tiebreakTime2: tiebreakTime2 !== null && tiebreakTime2 !== undefined ? tiebreakTime2 : null,
+      };
+
+      await panelinhaService.criarJogoPanelinha(panelinhaId, payload);
+      onSuccess();
+    } catch (error: any) {
+      console.error('Erro ao criar jogo:', error);
+      setErro(error.data?.mensagem || error.message || 'Erro ao criar jogo');
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col">
+        <div className="p-6 border-b">
+          <h2 className="text-2xl font-bold mb-4">Montar Jogo</h2>
+          
+          {erro && (
+            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+              {erro}
+            </div>
+          )}
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Formato
+            </label>
+            <div className="flex gap-4">
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  value="simples"
+                  checked={formato === 'simples'}
+                  onChange={(e) => setFormato(e.target.value as 'simples' | 'duplas')}
+                  className="mr-2"
+                  disabled={salvando}
+                />
+                Simples (2 jogadores)
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  value="duplas"
+                  checked={formato === 'duplas'}
+                  onChange={(e) => setFormato(e.target.value as 'simples' | 'duplas')}
+                  className="mr-2"
+                  disabled={salvando}
+                />
+                Duplas (4 jogadores)
+              </label>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Time 1 - Jogador 1 *
+              </label>
+              <select
+                value={atleta1Id}
+                onChange={(e) => setAtleta1Id(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={salvando}
+              >
+                <option value="">Selecione...</option>
+                {membros.map((membro) => (
+                  <option key={membro.id} value={membro.id}>
+                    {membro.nome}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Time 2 - Jogador 1 *
+              </label>
+              <select
+                value={atleta2Id}
+                onChange={(e) => setAtleta2Id(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={salvando}
+              >
+                <option value="">Selecione...</option>
+                {membros.map((membro) => (
+                  <option key={membro.id} value={membro.id}>
+                    {membro.nome}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {formato === 'duplas' && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Time 1 - Jogador 2 *
+                  </label>
+                  <select
+                    value={atleta3Id}
+                    onChange={(e) => setAtleta3Id(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={salvando}
+                  >
+                    <option value="">Selecione...</option>
+                    {membros.filter(m => m.id !== atleta1Id).map((membro) => (
+                      <option key={membro.id} value={membro.id}>
+                        {membro.nome}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Time 2 - Jogador 2 *
+                  </label>
+                  <select
+                    value={atleta4Id}
+                    onChange={(e) => setAtleta4Id(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={salvando}
+                  >
+                    <option value="">Selecione...</option>
+                    {membros.filter(m => m.id !== atleta2Id).map((membro) => (
+                      <option key={membro.id} value={membro.id}>
+                        {membro.nome}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Data e Hora *
+              </label>
+              <input
+                type="datetime-local"
+                value={data}
+                onChange={(e) => setData(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={salvando}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Local *
+              </label>
+              <input
+                type="text"
+                value={local}
+                onChange={(e) => setLocal(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Ex: Quadra 1"
+                disabled={salvando}
+              />
+            </div>
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Placar (opcional - pode preencher depois)
+            </label>
+            <div className="grid grid-cols-4 gap-2">
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Time 1</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={gamesTime1 ?? ''}
+                  onChange={(e) => setGamesTime1(e.target.value ? parseInt(e.target.value) : null)}
+                  className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm"
+                  placeholder="Games"
+                  disabled={salvando}
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Time 2</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={gamesTime2 ?? ''}
+                  onChange={(e) => setGamesTime2(e.target.value ? parseInt(e.target.value) : null)}
+                  className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm"
+                  placeholder="Games"
+                  disabled={salvando}
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">TB Time 1</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={tiebreakTime1 ?? ''}
+                  onChange={(e) => setTiebreakTime1(e.target.value ? parseInt(e.target.value) : null)}
+                  className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm"
+                  placeholder="Tie Break"
+                  disabled={salvando}
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">TB Time 2</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={tiebreakTime2 ?? ''}
+                  onChange={(e) => setTiebreakTime2(e.target.value ? parseInt(e.target.value) : null)}
+                  className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm"
+                  placeholder="Tie Break"
+                  disabled={salvando}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6 border-t flex gap-3 justify-end">
+          <button
+            onClick={onClose}
+            disabled={salvando}
+            className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 disabled:opacity-50"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleSalvar}
+            disabled={salvando}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+          >
+            {salvando ? 'Salvando...' : 'Criar Jogo'}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 

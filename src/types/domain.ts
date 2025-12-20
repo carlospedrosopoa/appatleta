@@ -37,6 +37,11 @@ export interface Partida {
   cardUrl?: string | null; // URL do card gerado no Google Cloud Storage (null quando não gerado ou invalidado)
   cardGeradoEm?: string | null; // Timestamp de quando o card foi gerado/atualizado
   cardVersao?: number; // Versão do card (incrementa quando regenerado)
+  panelinhas?: Array<{
+    id: string;
+    nome: string;
+    esporte?: string;
+  }>; // Panelinhas vinculadas a esta partida
 }
 
 
