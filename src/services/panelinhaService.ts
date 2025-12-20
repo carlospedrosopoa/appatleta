@@ -227,6 +227,16 @@ export async function criarJogoPanelinha(panelinhaId: string, payload: CriarJogo
   }
 }
 
+// Deletar jogo da panelinha
+export async function deletarJogoPanelinha(panelinhaId: string, jogoId: string): Promise<void> {
+  try {
+    await api.delete(`/user/panelinha/${panelinhaId}/jogos/${jogoId}`);
+  } catch (error: any) {
+    console.error('Erro ao deletar jogo:', error);
+    throw error;
+  }
+}
+
 // Exportar todas as funções como um objeto para facilitar o uso
 export const panelinhaService = {
   buscarAtletas,
@@ -241,5 +251,6 @@ export const panelinhaService = {
   recalcularRankingPanelinha,
   listarJogosPanelinha,
   criarJogoPanelinha,
+  deletarJogoPanelinha,
 };
 

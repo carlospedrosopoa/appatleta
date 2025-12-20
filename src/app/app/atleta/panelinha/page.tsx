@@ -737,16 +737,38 @@ function ModalDetalhesPanelinha({ isOpen, panelinha, onClose, onAtualizar, onDel
                       return (
                         <div key={jogo.id} className="border border-gray-200 rounded-lg p-4">
                           <div className="flex items-center justify-between mb-3">
-                            <div className="text-sm text-gray-500">
-                              {new Date(jogo.data).toLocaleDateString('pt-BR', {
-                                day: '2-digit',
-                                month: '2-digit',
-                                year: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })}
+                            <div className="flex-1">
+                              <div className="text-sm text-gray-500">
+                                {new Date(jogo.data).toLocaleDateString('pt-BR', {
+                                  day: '2-digit',
+                                  month: '2-digit',
+                                  year: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })}
+                              </div>
+                              <div className="text-sm text-gray-500">{jogo.local}</div>
                             </div>
-                            <div className="text-sm text-gray-500">{jogo.local}</div>
+                            {panelinha.ehCriador && (
+                              <button
+                                onClick={async () => {
+                                  if (!confirm('Tem certeza que deseja deletar este jogo? Esta ação não pode ser desfeita e o ranking será recalculado.')) {
+                                    return;
+                                  }
+                                  try {
+                                    await panelinhaService.deletarJogoPanelinha(panelinha.id, jogo.id);
+                                    await carregarJogos();
+                                    onAtualizar(); // Atualizar ranking se necessário
+                                  } catch (error: any) {
+                                    alert(error.data?.mensagem || error.message || 'Erro ao deletar jogo');
+                                  }
+                                }}
+                                className="ml-4 px-3 py-1.5 text-xs bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors font-medium"
+                                title="Deletar jogo"
+                              >
+                                🗑️
+                              </button>
+                            )}
                           </div>
                           
                           <div className="grid grid-cols-2 gap-4">
