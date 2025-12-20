@@ -548,60 +548,16 @@ function ModalDetalhesPanelinha({ isOpen, panelinha, onClose, onAtualizar, onDel
                 {panelinha.descricao && (
                   <p className="text-gray-600 mb-4">{panelinha.descricao}</p>
                 )}
-                <div className="flex gap-3">
-                  {panelinha.ehCriador && (
-                    <>
-                      <button
-                        onClick={() => setEditando(true)}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                      >
-                        Editar
-                      </button>
-                      {abaAtiva === 'membros' && (
-                        <button
-                          onClick={() => setMostrarBuscar(true)}
-                          className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-                        >
-                          + Adicionar Atleta
-                        </button>
-                      )}
-                      {abaAtiva === 'jogos' && (
-                        <button
-                          onClick={() => setMostrarCriarJogo(true)}
-                          className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-                        >
-                          + Novo Jogo
-                        </button>
-                      )}
-                      {abaAtiva === 'ranking' && (
-                        <button
-                          onClick={async () => {
-                            setCarregandoRanking(true);
-                            try {
-                              await panelinhaService.recalcularRankingPanelinha(panelinha.id);
-                              await carregarRanking();
-                            } catch (error: any) {
-                              alert(error.data?.mensagem || error.message || 'Erro ao recalcular ranking');
-                            } finally {
-                              setCarregandoRanking(false);
-                            }
-                          }}
-                          disabled={carregandoRanking}
-                          className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50"
-                        >
-                          {carregandoRanking ? 'Recalculando...' : 'Recalcular Ranking'}
-                        </button>
-                      )}
-                      <button
-                        onClick={handleDeletar}
-                        disabled={salvando}
-                        className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
-                      >
-                        Deletar
-                      </button>
-                    </>
-                  )}
-                </div>
+                {panelinha.ehCriador && (
+                  <div className="mb-4">
+                    <button
+                      onClick={() => setEditando(true)}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
+                    >
+                      Editar Panelinha
+                    </button>
+                  </div>
+                )}
               </>
             )}
           </div>
@@ -1226,6 +1182,9 @@ export default function PanelinhaPage() {
   const [panelinhaSelecionada, setPanelinhaSelecionada] = useState<Panelinha | null>(null);
   const [mostrarDetalhes, setMostrarDetalhes] = useState(false);
   const [erro, setErro] = useState('');
+  const [mostrarBuscar, setMostrarBuscar] = useState(false);
+  const [mostrarCriarJogo, setMostrarCriarJogo] = useState(false);
+  const [panelinhaParaAcao, setPanelinhaParaAcao] = useState<Panelinha | null>(null);
 
   const carregarPanelinhas = async () => {
     setCarregando(true);
@@ -1316,60 +1275,127 @@ export default function PanelinhaPage() {
             return (
             <div
               key={panelinha.id}
-              onClick={() => handleAbrirDetalhes(panelinha)}
-              className={`${corFundo} border-2 rounded-xl p-6 hover:shadow-xl transition-all cursor-pointer transform hover:-translate-y-1`}
+              className={`${corFundo} border-2 rounded-xl p-6 hover:shadow-xl transition-all transform hover:-translate-y-1`}
             >
-              <div className="flex items-start justify-between mb-4">
-                <h2 className="text-xl font-bold">{panelinha.nome}</h2>
-                {panelinha.ehCriador && (
-                  <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
-                    Criador
-                  </span>
+              <div 
+                onClick={() => handleAbrirDetalhes(panelinha)}
+                className="cursor-pointer"
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <h2 className="text-xl font-bold">{panelinha.nome}</h2>
+                  {panelinha.ehCriador && (
+                    <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
+                      Criador
+                    </span>
+                  )}
+                </div>
+                
+                {panelinha.esporte && (
+                  <div className="mb-3">
+                    <span className="inline-block px-3 py-1 text-sm bg-blue-100 text-blue-800 rounded-full font-medium">
+                      {panelinha.esporte}
+                    </span>
+                  </div>
                 )}
-              </div>
-              
-              {panelinha.esporte && (
-                <div className="mb-3">
-                  <span className="inline-block px-3 py-1 text-sm bg-blue-100 text-blue-800 rounded-full font-medium">
-                    {panelinha.esporte}
+                
+                {panelinha.descricao && (
+                  <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                    {panelinha.descricao}
+                  </p>
+                )}
+
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="text-sm text-gray-500">
+                    {panelinha.totalMembros} {panelinha.totalMembros === 1 ? 'membro' : 'membros'}
                   </span>
                 </div>
-              )}
-              
-              {panelinha.descricao && (
-                <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                  {panelinha.descricao}
-                </p>
-              )}
 
-              <div className="flex items-center gap-2 mb-4">
-                <span className="text-sm text-gray-500">
-                  {panelinha.totalMembros} {panelinha.totalMembros === 1 ? 'membro' : 'membros'}
-                </span>
+                {panelinha.membros.length > 0 && (
+                  <div className="flex -space-x-2 mb-4">
+                    {panelinha.membros.slice(0, 4).map((membro) => (
+                      <div key={membro.id} className="relative">
+                        {membro.fotoUrl ? (
+                          <img
+                            src={membro.fotoUrl}
+                            alt={membro.nome}
+                            className="w-10 h-10 rounded-full border-2 border-white object-cover"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full border-2 border-white bg-gray-300 flex items-center justify-center text-gray-600 text-xs font-semibold">
+                            {membro.nome.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    {panelinha.totalMembros > 4 && (
+                      <div className="w-10 h-10 rounded-full border-2 border-white bg-gray-400 flex items-center justify-center text-white text-xs font-semibold">
+                        +{panelinha.totalMembros - 4}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
-              {panelinha.membros.length > 0 && (
-                <div className="flex -space-x-2">
-                  {panelinha.membros.slice(0, 4).map((membro) => (
-                    <div key={membro.id} className="relative">
-                      {membro.fotoUrl ? (
-                        <img
-                          src={membro.fotoUrl}
-                          alt={membro.nome}
-                          className="w-10 h-10 rounded-full border-2 border-white object-cover"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full border-2 border-white bg-gray-300 flex items-center justify-center text-gray-600 text-xs font-semibold">
-                          {membro.nome.charAt(0).toUpperCase()}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                  {panelinha.totalMembros > 4 && (
-                    <div className="w-10 h-10 rounded-full border-2 border-white bg-gray-400 flex items-center justify-center text-white text-xs font-semibold">
-                      +{panelinha.totalMembros - 4}
-                    </div>
-                  )}
+              {/* Botões de ação - apenas para criador */}
+              {panelinha.ehCriador && (
+                <div className="mt-4 pt-4 border-t border-gray-300 flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    onClick={async () => {
+                      try {
+                        const completa = await panelinhaService.obterPanelinha(panelinha.id);
+                        setPanelinhaParaAcao(completa);
+                        setMostrarBuscar(true);
+                      } catch (error: any) {
+                        alert(error.data?.mensagem || error.message || 'Erro ao carregar panelinha');
+                      }
+                    }}
+                    className="px-3 py-1.5 text-xs bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors font-medium"
+                  >
+                    + Atleta
+                  </button>
+                  <button
+                    onClick={async () => {
+                      try {
+                        const completa = await panelinhaService.obterPanelinha(panelinha.id);
+                        setPanelinhaParaAcao(completa);
+                        setMostrarCriarJogo(true);
+                      } catch (error: any) {
+                        alert(error.data?.mensagem || error.message || 'Erro ao carregar panelinha');
+                      }
+                    }}
+                    className="px-3 py-1.5 text-xs bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors font-medium"
+                  >
+                    + Jogo
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (!confirm('Tem certeza que deseja recalcular o ranking desta panelinha?')) return;
+                      try {
+                        await panelinhaService.recalcularRankingPanelinha(panelinha.id);
+                        alert('Ranking recalculado com sucesso!');
+                        carregarPanelinhas();
+                      } catch (error: any) {
+                        alert(error.data?.mensagem || error.message || 'Erro ao recalcular ranking');
+                      }
+                    }}
+                    className="px-3 py-1.5 text-xs bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors font-medium"
+                  >
+                    Recalcular
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (!confirm('Tem certeza que deseja deletar esta panelinha? Esta ação não pode ser desfeita.')) return;
+                      try {
+                        await panelinhaService.deletarPanelinha(panelinha.id);
+                        carregarPanelinhas();
+                      } catch (error: any) {
+                        alert(error.data?.mensagem || error.message || 'Erro ao deletar panelinha');
+                      }
+                    }}
+                    className="px-3 py-1.5 text-xs bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors font-medium"
+                  >
+                    Deletar
+                  </button>
                 </div>
               )}
             </div>
@@ -1406,6 +1432,40 @@ export default function PanelinhaPage() {
           carregarPanelinhas();
         }}
       />
+
+      {mostrarBuscar && panelinhaParaAcao && (
+        <ModalBuscarAtletas
+          isOpen={mostrarBuscar}
+          panelinhaId={panelinhaParaAcao.id}
+          membrosAtuais={panelinhaParaAcao.membros}
+          onClose={() => {
+            setMostrarBuscar(false);
+            setPanelinhaParaAcao(null);
+          }}
+          onAdicionar={() => {
+            setMostrarBuscar(false);
+            setPanelinhaParaAcao(null);
+            carregarPanelinhas();
+          }}
+        />
+      )}
+
+      {mostrarCriarJogo && panelinhaParaAcao && (
+        <ModalCriarJogo
+          isOpen={mostrarCriarJogo}
+          panelinhaId={panelinhaParaAcao.id}
+          membros={panelinhaParaAcao.membros}
+          onClose={() => {
+            setMostrarCriarJogo(false);
+            setPanelinhaParaAcao(null);
+          }}
+          onSuccess={() => {
+            setMostrarCriarJogo(false);
+            setPanelinhaParaAcao(null);
+            carregarPanelinhas();
+          }}
+        />
+      )}
     </div>
   );
 }
