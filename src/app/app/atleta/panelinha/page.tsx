@@ -15,9 +15,12 @@ interface ModalCriarPanelinhaProps {
   onSuccess: () => void;
 }
 
+const ESPORTES_DISPONIVEIS = ['Tênis', 'Futebol', 'Vôlei', 'Basquete', 'Futsal', 'Futvolei', 'Beach Tennis', 'Padel', 'Pickleball', 'Squash', 'Badminton', 'Handebol'];
+
 function ModalCriarPanelinha({ isOpen, onClose, onSuccess }: ModalCriarPanelinhaProps) {
   const [nome, setNome] = useState('');
   const [descricao, setDescricao] = useState('');
+  const [esporte, setEsporte] = useState('');
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState('');
 
@@ -34,9 +37,11 @@ function ModalCriarPanelinha({ isOpen, onClose, onSuccess }: ModalCriarPanelinha
       await panelinhaService.criarPanelinha({
         nome: nome.trim(),
         descricao: descricao.trim() || undefined,
+        esporte: esporte.trim() || undefined,
       });
       setNome('');
       setDescricao('');
+      setEsporte('');
       onSuccess();
     } catch (error: any) {
       console.error('Erro ao criar panelinha:', error);
@@ -71,6 +76,25 @@ function ModalCriarPanelinha({ isOpen, onClose, onSuccess }: ModalCriarPanelinha
             placeholder="Ex: Turma de Beach Tennis"
             disabled={salvando}
           />
+        </div>
+
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Esporte (opcional)
+          </label>
+          <select
+            value={esporte}
+            onChange={(e) => setEsporte(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            disabled={salvando}
+          >
+            <option value="">Selecione um esporte...</option>
+            {ESPORTES_DISPONIVEIS.map((esp) => (
+              <option key={esp} value={esp}>
+                {esp}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="mb-6">
@@ -291,6 +315,7 @@ function ModalDetalhesPanelinha({ isOpen, panelinha, onClose, onAtualizar, onDel
   const [editando, setEditando] = useState(false);
   const [nome, setNome] = useState('');
   const [descricao, setDescricao] = useState('');
+  const [esporte, setEsporte] = useState('');
   const [salvando, setSalvando] = useState(false);
   const [removendo, setRemovendo] = useState<string | null>(null);
   const [erro, setErro] = useState('');
@@ -299,6 +324,7 @@ function ModalDetalhesPanelinha({ isOpen, panelinha, onClose, onAtualizar, onDel
     if (panelinha) {
       setNome(panelinha.nome);
       setDescricao(panelinha.descricao || '');
+      setEsporte(panelinha.esporte || '');
       setEditando(false);
     }
   }, [panelinha]);
@@ -318,6 +344,7 @@ function ModalDetalhesPanelinha({ isOpen, panelinha, onClose, onAtualizar, onDel
       await panelinhaService.atualizarPanelinha(panelinha.id, {
         nome: nome.trim(),
         descricao: descricao.trim() || undefined,
+        esporte: esporte.trim() || undefined,
       });
       setEditando(false);
       onAtualizar();
@@ -408,6 +435,24 @@ function ModalDetalhesPanelinha({ isOpen, panelinha, onClose, onAtualizar, onDel
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Esporte
+                  </label>
+                  <select
+                    value={esporte}
+                    onChange={(e) => setEsporte(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={salvando}
+                  >
+                    <option value="">Selecione um esporte...</option>
+                    {ESPORTES_DISPONIVEIS.map((esp) => (
+                      <option key={esp} value={esp}>
+                        {esp}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Descrição
                   </label>
                   <textarea
@@ -424,6 +469,7 @@ function ModalDetalhesPanelinha({ isOpen, panelinha, onClose, onAtualizar, onDel
                       setEditando(false);
                       setNome(panelinha.nome);
                       setDescricao(panelinha.descricao || '');
+                      setEsporte(panelinha.esporte || '');
                       setErro('');
                     }}
                     disabled={salvando}
@@ -640,6 +686,14 @@ export default function PanelinhaPage() {
                   </span>
                 )}
               </div>
+              
+              {panelinha.esporte && (
+                <div className="mb-3">
+                  <span className="inline-block px-3 py-1 text-sm bg-blue-100 text-blue-800 rounded-full font-medium">
+                    {panelinha.esporte}
+                  </span>
+                </div>
+              )}
               
               {panelinha.descricao && (
                 <p className="text-gray-600 text-sm mb-4 line-clamp-2">

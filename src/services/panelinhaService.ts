@@ -26,6 +26,7 @@ export interface Panelinha {
   id: string;
   nome: string;
   descricao?: string;
+  esporte?: string;
   atletaIdCriador: string;
   ehCriador: boolean;
   totalMembros: number;
@@ -37,11 +38,13 @@ export interface Panelinha {
 export interface CriarPanelinhaPayload {
   nome: string;
   descricao?: string;
+  esporte?: string;
 }
 
 export interface AtualizarPanelinhaPayload {
   nome?: string;
   descricao?: string;
+  esporte?: string;
 }
 
 // Buscar atletas por nome ou telefone
