@@ -64,3 +64,4 @@ https://cdn.playnaquadra.com.br/logo.png
 - O logo deve estar em formato PNG, SVG ou JPG
 - Recomenda-se usar imagens otimizadas (WebP) para melhor performance
 
+
