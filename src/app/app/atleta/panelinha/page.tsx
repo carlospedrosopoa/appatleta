@@ -890,7 +890,6 @@ interface ModalCriarJogoProps {
 }
 
 function ModalCriarJogo({ isOpen, panelinhaId, membros, onClose, onSuccess }: ModalCriarJogoProps) {
-  const [formato, setFormato] = useState<'simples' | 'duplas'>('duplas');
   const [atleta1Id, setAtleta1Id] = useState('');
   const [atleta2Id, setAtleta2Id] = useState('');
   const [atleta3Id, setAtleta3Id] = useState('');
@@ -908,21 +907,53 @@ function ModalCriarJogo({ isOpen, panelinhaId, membros, onClose, onSuccess }: Mo
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState('');
 
+  // Resetar seleções quando o modal abrir
   useEffect(() => {
-    if (formato === 'simples') {
+    if (isOpen) {
+      setAtleta1Id('');
+      setAtleta2Id('');
       setAtleta3Id('');
       setAtleta4Id('');
+      setErro('');
     }
-  }, [formato]);
+  }, [isOpen]);
 
-  const handleSalvar = async () => {
-    if (!atleta1Id || !atleta2Id) {
-      setErro('Selecione pelo menos 2 atletas');
+  const handleSelecionarAtleta = (atletaId: string) => {
+    if (salvando) return;
+    
+    // Verificar se o atleta já foi selecionado
+    if ([atleta1Id, atleta2Id, atleta3Id, atleta4Id].includes(atletaId)) {
+      // Se já está selecionado, remover da posição atual
+      if (atleta1Id === atletaId) setAtleta1Id('');
+      else if (atleta2Id === atletaId) setAtleta2Id('');
+      else if (atleta3Id === atletaId) setAtleta3Id('');
+      else if (atleta4Id === atletaId) setAtleta4Id('');
       return;
     }
 
-    if (formato === 'duplas' && (!atleta3Id || !atleta4Id)) {
-      setErro('Para duplas, selecione 4 atletas');
+    // Adicionar na próxima posição disponível
+    if (!atleta1Id) {
+      setAtleta1Id(atletaId);
+    } else if (!atleta2Id) {
+      setAtleta2Id(atletaId);
+    } else if (!atleta3Id) {
+      setAtleta3Id(atletaId);
+    } else if (!atleta4Id) {
+      setAtleta4Id(atletaId);
+    }
+  };
+
+  const getPosicaoAtleta = (atletaId: string): string | null => {
+    if (atleta1Id === atletaId) return 'Time 1 - Jogador 1';
+    if (atleta2Id === atletaId) return 'Time 2 - Jogador 1';
+    if (atleta3Id === atletaId) return 'Time 1 - Jogador 2';
+    if (atleta4Id === atletaId) return 'Time 2 - Jogador 2';
+    return null;
+  };
+
+  const handleSalvar = async () => {
+    if (!atleta1Id || !atleta2Id || !atleta3Id || !atleta4Id) {
+      setErro('Selecione 4 atletas para formar as duplas');
       return;
     }
 
@@ -940,8 +971,8 @@ function ModalCriarJogo({ isOpen, panelinhaId, membros, onClose, onSuccess }: Mo
         local: local.trim(),
         atleta1Id,
         atleta2Id,
-        atleta3Id: formato === 'duplas' ? atleta3Id : undefined,
-        atleta4Id: formato === 'duplas' ? atleta4Id : undefined,
+        atleta3Id,
+        atleta4Id,
         gamesTime1: gamesTime1 !== null && gamesTime1 !== undefined ? gamesTime1 : null,
         gamesTime2: gamesTime2 !== null && gamesTime2 !== undefined ? gamesTime2 : null,
         tiebreakTime1: tiebreakTime1 !== null && tiebreakTime1 !== undefined ? tiebreakTime1 : null,
@@ -972,113 +1003,170 @@ function ModalCriarJogo({ isOpen, panelinhaId, membros, onClose, onSuccess }: Mo
             </div>
           )}
 
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Formato
-            </label>
-            <div className="flex gap-4">
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  value="simples"
-                  checked={formato === 'simples'}
-                  onChange={(e) => setFormato(e.target.value as 'simples' | 'duplas')}
-                  className="mr-2"
-                  disabled={salvando}
-                />
-                Simples (2 jogadores)
-              </label>
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  value="duplas"
-                  checked={formato === 'duplas'}
-                  onChange={(e) => setFormato(e.target.value as 'simples' | 'duplas')}
-                  className="mr-2"
-                  disabled={salvando}
-                />
-                Duplas (4 jogadores)
-              </label>
+          {/* Visualização dos times formados */}
+          <div className="mb-6">
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="border-2 border-blue-200 rounded-lg p-4 bg-blue-50">
+                <h3 className="text-sm font-semibold text-blue-800 mb-3">Time 1</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 min-h-[40px]">
+                    {atleta1Id ? (
+                      (() => {
+                        const atleta = membros.find(m => m.id === atleta1Id);
+                        return atleta ? (
+                          <div className="flex items-center gap-2">
+                            {atleta.fotoUrl ? (
+                              <img src={atleta.fotoUrl} alt={atleta.nome} className="w-8 h-8 rounded-full object-cover" />
+                            ) : (
+                              <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 text-xs font-semibold">
+                                {atleta.nome.charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                            <span className="text-sm font-medium">{atleta.nome}</span>
+                          </div>
+                        ) : null;
+                      })()
+                    ) : (
+                      <span className="text-xs text-gray-400">Jogador 1</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 min-h-[40px]">
+                    {atleta3Id ? (
+                      (() => {
+                        const atleta = membros.find(m => m.id === atleta3Id);
+                        return atleta ? (
+                          <div className="flex items-center gap-2">
+                            {atleta.fotoUrl ? (
+                              <img src={atleta.fotoUrl} alt={atleta.nome} className="w-8 h-8 rounded-full object-cover" />
+                            ) : (
+                              <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 text-xs font-semibold">
+                                {atleta.nome.charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                            <span className="text-sm font-medium">{atleta.nome}</span>
+                          </div>
+                        ) : null;
+                      })()
+                    ) : (
+                      <span className="text-xs text-gray-400">Jogador 2</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="border-2 border-red-200 rounded-lg p-4 bg-red-50">
+                <h3 className="text-sm font-semibold text-red-800 mb-3">Time 2</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 min-h-[40px]">
+                    {atleta2Id ? (
+                      (() => {
+                        const atleta = membros.find(m => m.id === atleta2Id);
+                        return atleta ? (
+                          <div className="flex items-center gap-2">
+                            {atleta.fotoUrl ? (
+                              <img src={atleta.fotoUrl} alt={atleta.nome} className="w-8 h-8 rounded-full object-cover" />
+                            ) : (
+                              <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 text-xs font-semibold">
+                                {atleta.nome.charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                            <span className="text-sm font-medium">{atleta.nome}</span>
+                          </div>
+                        ) : null;
+                      })()
+                    ) : (
+                      <span className="text-xs text-gray-400">Jogador 1</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 min-h-[40px]">
+                    {atleta4Id ? (
+                      (() => {
+                        const atleta = membros.find(m => m.id === atleta4Id);
+                        return atleta ? (
+                          <div className="flex items-center gap-2">
+                            {atleta.fotoUrl ? (
+                              <img src={atleta.fotoUrl} alt={atleta.nome} className="w-8 h-8 rounded-full object-cover" />
+                            ) : (
+                              <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 text-xs font-semibold">
+                                {atleta.nome.charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                            <span className="text-sm font-medium">{atleta.nome}</span>
+                          </div>
+                        ) : null;
+                      })()
+                    ) : (
+                      <span className="text-xs text-gray-400">Jogador 2</span>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Time 1 - Jogador 1 *
-              </label>
-              <select
-                value={atleta1Id}
-                onChange={(e) => setAtleta1Id(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                disabled={salvando}
-              >
-                <option value="">Selecione...</option>
-                {membros.map((membro) => (
-                  <option key={membro.id} value={membro.id}>
-                    {membro.nome}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Time 2 - Jogador 1 *
-              </label>
-              <select
-                value={atleta2Id}
-                onChange={(e) => setAtleta2Id(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                disabled={salvando}
-              >
-                <option value="">Selecione...</option>
-                {membros.map((membro) => (
-                  <option key={membro.id} value={membro.id}>
-                    {membro.nome}
-                  </option>
-                ))}
-              </select>
-            </div>
-            {formato === 'duplas' && (
-              <>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Time 1 - Jogador 2 *
-                  </label>
-                  <select
-                    value={atleta3Id}
-                    onChange={(e) => setAtleta3Id(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          {/* Lista de atletas para seleção */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-3">
+              Clique nos atletas para formar as duplas (ordem: Time 1 - Jogador 1, Time 2 - Jogador 1, Time 1 - Jogador 2, Time 2 - Jogador 2)
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-64 overflow-y-auto p-2 border border-gray-200 rounded-lg">
+              {membros.map((membro) => {
+                const posicao = getPosicaoAtleta(membro.id);
+                const estaSelecionado = posicao !== null;
+                const isTime1 = posicao?.includes('Time 1');
+                const isTime2 = posicao?.includes('Time 2');
+                
+                return (
+                  <button
+                    key={membro.id}
+                    type="button"
+                    onClick={() => handleSelecionarAtleta(membro.id)}
                     disabled={salvando}
+                    className={`
+                      flex flex-col items-center gap-2 p-3 rounded-lg border-2 transition-all
+                      ${estaSelecionado 
+                        ? isTime1 
+                          ? 'border-blue-500 bg-blue-100' 
+                          : 'border-red-500 bg-red-100'
+                        : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+                      }
+                      ${salvando ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                    `}
                   >
-                    <option value="">Selecione...</option>
-                    {membros.filter(m => m.id !== atleta1Id).map((membro) => (
-                      <option key={membro.id} value={membro.id}>
-                        {membro.nome}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Time 2 - Jogador 2 *
-                  </label>
-                  <select
-                    value={atleta4Id}
-                    onChange={(e) => setAtleta4Id(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    disabled={salvando}
-                  >
-                    <option value="">Selecione...</option>
-                    {membros.filter(m => m.id !== atleta2Id).map((membro) => (
-                      <option key={membro.id} value={membro.id}>
-                        {membro.nome}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </>
-            )}
+                    {membro.fotoUrl ? (
+                      <img
+                        src={membro.fotoUrl}
+                        alt={membro.nome}
+                        className={`w-12 h-12 rounded-full object-cover border-2 ${
+                          estaSelecionado 
+                            ? isTime1 ? 'border-blue-500' : 'border-red-500'
+                            : 'border-gray-300'
+                        }`}
+                      />
+                    ) : (
+                      <div className={`
+                        w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-semibold border-2
+                        ${estaSelecionado 
+                          ? isTime1 ? 'border-blue-500 bg-blue-200' : 'border-red-500 bg-red-200'
+                          : 'border-gray-300'
+                        }
+                      `}>
+                        {membro.nome.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <span className={`text-xs font-medium text-center ${estaSelecionado ? 'font-semibold' : ''}`}>
+                      {membro.nome}
+                    </span>
+                    {posicao && (
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${
+                        isTime1 ? 'bg-blue-200 text-blue-800' : 'bg-red-200 text-red-800'
+                      }`}>
+                        {posicao}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4 mb-4">
