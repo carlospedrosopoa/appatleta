@@ -67,6 +67,7 @@ export interface AtualizarAtletaPayload {
   pointIdsFrequentes?: string[];
   esportePreferido?: string | null;
   esportesPratica?: string[];
+  aceitaLembretesAgendamento?: boolean;
 }
 
 // Serviço de autenticação para frontend externo

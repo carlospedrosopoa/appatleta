@@ -25,6 +25,7 @@ const Menu = () => {
     { path: '/dashboard', label: 'Dashboard', roles: ['USER', 'ADMIN'] },
     { path: '/perfil', label: 'Meu Perfil', roles: ['USER', 'ADMIN'] },
     { path: '/agendamentos', label: 'Agendamentos', roles: ['USER', 'ADMIN'] },
+    { path: '/app/atleta/panelinha', label: 'Minha Panelinha', roles: ['USER'] },
     { path: '/app/atleta/consumo', label: 'Meu Consumo', roles: ['USER'] },
     { path: '/app/arena', label: 'Área da Arena', roles: ['ORGANIZER'] },
     { path: '/usuarios', label: 'Usuários', roles: ['ADMIN'] },

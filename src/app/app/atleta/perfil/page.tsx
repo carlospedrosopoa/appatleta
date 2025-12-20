@@ -476,7 +476,9 @@ function ModalEditarAtleta({ isOpen, atleta, onClose, onSuccess }: ModalEditarAt
     };
 
     try {
-      await userAtletaService.atualizar(payload);
+      console.log('[MODAL EDITAR ATLETA] Payload sendo enviado:', payload);
+      const resultado = await userAtletaService.atualizar(payload);
+      console.log('[MODAL EDITAR ATLETA] Resultado da atualização:', resultado);
       onSuccess();
     } catch (error: any) {
       console.error('Erro ao atualizar atleta:', error);
