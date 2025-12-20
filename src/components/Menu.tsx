@@ -12,7 +12,6 @@ import {
   LayoutDashboard, 
   User, 
   Calendar, 
-  UtensilsCrossed, 
   ShoppingCart, 
   Building2, 
   Users, 
@@ -21,6 +20,7 @@ import {
   DollarSign, 
   LogOut 
 } from 'lucide-react';
+import PanelaIcon from './icons/PanelaIcon';
 
 const Menu = () => {
   const { usuario, logout } = useAuth();
@@ -39,7 +39,7 @@ const Menu = () => {
     { path: '/dashboard', label: 'Dashboard', roles: ['USER', 'ADMIN'], icon: LayoutDashboard },
     { path: '/perfil', label: 'Meu Perfil', roles: ['USER', 'ADMIN'], icon: User },
     { path: '/agendamentos', label: 'Agendamentos', roles: ['USER', 'ADMIN'], icon: Calendar },
-    { path: '/app/atleta/panelinha', label: 'Minha Panelinha', roles: ['USER'], icon: UtensilsCrossed },
+    { path: '/app/atleta/panelinha', label: 'Minha Panelinha', roles: ['USER'], icon: PanelaIcon },
     { path: '/app/atleta/consumo', label: 'Meu Consumo', roles: ['USER'], icon: ShoppingCart },
     { path: '/app/arena', label: 'Área da Arena', roles: ['ORGANIZER'], icon: Building2 },
     { path: '/usuarios', label: 'Usuários', roles: ['ADMIN'], icon: Users },

@@ -10,12 +10,12 @@ import {
   X, 
   Calendar, 
   Trophy, 
-  UtensilsCrossed, 
   ShoppingCart, 
   LayoutDashboard, 
   User, 
   LogOut 
 } from 'lucide-react';
+import PanelaIcon from '@/components/icons/PanelaIcon';
 
 export default function AtletaLayout({ children }: { children: React.ReactNode }) {
   const { usuario, logout } = useAuth();
@@ -26,7 +26,7 @@ export default function AtletaLayout({ children }: { children: React.ReactNode }
   const navItems = [
     { to: '/app/atleta/agendamentos', label: 'Agendamentos', icon: Calendar },
     { to: '/app/atleta/jogos', label: 'Meus Jogos', icon: Trophy },
-    { to: '/app/atleta/panelinha', label: 'Minha Panelinha', icon: UtensilsCrossed },
+    { to: '/app/atleta/panelinha', label: 'Minha Panelinha', icon: PanelaIcon },
     { to: '/app/atleta/consumo', label: 'Meu Consumo', icon: ShoppingCart },
     { to: '/app/atleta/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/app/atleta/perfil', label: 'Meu Perfil', icon: User },
