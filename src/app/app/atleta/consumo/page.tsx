@@ -23,19 +23,21 @@ export default function MeuConsumoPage() {
     carregarConsumo();
     
     // Verificar se há callback de pagamento na URL
-    // O Infinite Pay redireciona com: receipt_url, order_nsu, slug, capture_method, transaction_nsu
+    // O Infinite Pay pode redirecionar com: payment_callback (nosso parâmetro), order_nsu, transaction_nsu, slug, capture_method
     const urlParams = new URLSearchParams(window.location.search);
-    const orderNsu = urlParams.get('order_nsu');
+    // Priorizar payment_callback (que enviamos no redirectUrl), depois order_nsu (que o Infinite Pay pode adicionar)
+    const orderNsu = urlParams.get('payment_callback') || urlParams.get('order_nsu');
     const transactionNsu = urlParams.get('transaction_nsu');
     const slug = urlParams.get('slug');
     
     if (orderNsu) {
+      console.log('[PAGAMENTO CALLBACK] Detectado na URL:', { orderNsu, transactionNsu, slug });
       // Verificar status do pagamento
       verificarStatusPagamento(orderNsu, transactionNsu, slug);
       // Limpar parâmetros da URL
       window.history.replaceState({}, '', window.location.pathname);
     }
-  }, [authReady, usuario, filtroStatus]);
+  }, [authReady, usuario]);
 
   const verificarStatusPagamento = async (orderNsu: string, transactionNsu: string | null, slug: string | null) => {
     setAguardandoWebhook(true);
@@ -43,6 +45,16 @@ export default function MeuConsumoPage() {
     
     let tentativas = 0;
     const maxTentativas = 30; // 30 tentativas = ~1 minuto (2 segundos por tentativa)
+    let intervalId: NodeJS.Timeout | null = null;
+    
+    const fecharAguardando = () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+      setAguardandoWebhook(false);
+      setOrderIdAguardando(null);
+    };
     
     const verificar = async (): Promise<boolean> => {
       try {
@@ -50,35 +62,47 @@ export default function MeuConsumoPage() {
         const { api } = await import('@/lib/api');
         const statusResponse = await api.get(`/user/pagamento/infinite-pay/status/${orderNsu}`);
         
-        // Se o status for APPROVED, verificar se o pagamento foi criado no card
+        console.log('[PAGAMENTO STATUS]', { orderNsu, status: statusResponse.data.status, tentativas });
+        
+        // Se o status for APPROVED, pagamento foi processado
         if (statusResponse.data.status === 'APPROVED' || statusResponse.data.status === 'approved') {
-          // Recarregar cards para verificar se o pagamento foi processado
+          // Recarregar cards para mostrar o pagamento atualizado
           await carregarConsumo();
           
-          // Aguardar um pouco para garantir que o banco foi atualizado
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
-          // Verificar novamente os cards atualizados
-          const statusAtualizado = await api.get(`/user/pagamento/infinite-pay/status/${orderNsu}`);
-          
-          if (statusAtualizado.data.status === 'APPROVED' || statusAtualizado.data.status === 'approved') {
-            // Pagamento processado com sucesso
-            setAguardandoWebhook(false);
-            setOrderIdAguardando(null);
-            return true;
-          }
+          // Fechar modal de aguardo
+          fecharAguardando();
+          return true;
+        }
+        
+        // Se o status for PENDING mas já tentamos várias vezes, recarregar mesmo assim
+        // (pode ser que o webhook ainda não processou, mas o pagamento foi aprovado)
+        if (tentativas >= 15) {
+          console.log('[PAGAMENTO] Timeout parcial - recarregando cards mesmo com status PENDING');
+          await carregarConsumo();
+          // Aguardar mais um pouco antes de fechar
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          fecharAguardando();
+          return true;
         }
         
         return false;
-      } catch (error) {
+      } catch (error: any) {
         console.error('Erro ao verificar status do pagamento:', error);
-        // Se der erro mas já tentamos várias vezes, considerar processado
+        
+        // Se der 404, significa que o orderId não existe ainda (webhook não processou)
+        // Continuar tentando
+        if (error.response?.status === 404) {
+          return false;
+        }
+        
+        // Para outros erros, se já tentamos várias vezes, recarregar e fechar
         if (tentativas >= 10) {
+          console.log('[PAGAMENTO] Erro após várias tentativas - recarregando cards');
           await carregarConsumo();
-          setAguardandoWebhook(false);
-          setOrderIdAguardando(null);
+          fecharAguardando();
           return true;
         }
+        
         return false;
       }
     };
@@ -90,17 +114,20 @@ export default function MeuConsumoPage() {
     }
     
     // Polling: verificar a cada 2 segundos
-    const intervalId = setInterval(async () => {
+    intervalId = setInterval(async () => {
       tentativas++;
       const processado = await verificar();
       
       if (processado || tentativas >= maxTentativas) {
-        clearInterval(intervalId);
+        if (intervalId) {
+          clearInterval(intervalId);
+          intervalId = null;
+        }
         if (tentativas >= maxTentativas && !processado) {
-          // Timeout - mesmo assim recarregar e fechar
+          // Timeout final - recarregar e fechar
+          console.log('[PAGAMENTO] Timeout final - recarregando cards');
           await carregarConsumo();
-          setAguardandoWebhook(false);
-          setOrderIdAguardando(null);
+          fecharAguardando();
         }
       }
     }, 2000); // Verificar a cada 2 segundos
