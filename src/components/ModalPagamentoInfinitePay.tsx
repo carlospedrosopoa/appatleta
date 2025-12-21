@@ -226,7 +226,7 @@ export default function ModalPagamentoInfinitePay({
                   <ol className="list-decimal list-inside space-y-1 text-xs">
                     <li>Clique em "Pagar Agora!"</li>
                     <li>Você será redirecionado para o app Infinite Pay</li>
-                    <li>Complete o pagamento no app</li>
+                    <li>Complete o pagamento no app Infinite Pay</li>
                     <li>Volte para este app para confirmar</li>
                   </ol>
                 </div>
