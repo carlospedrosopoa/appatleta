@@ -119,10 +119,21 @@ export default function ModalPagamentoInfinitePay({
       if (!result.success) {
         setErro(result.error || 'Erro ao processar pagamento');
         setProcessando(false);
+      } else if (result.deeplink) {
+        // O DeepLink foi gerado e será aberto
+        // Fechar o modal e redirecionar
+        setProcessando(false);
+        onClose();
+        
+        // Pequeno delay para garantir que o modal feche antes do redirecionamento
+        setTimeout(() => {
+          if (typeof window !== 'undefined') {
+            window.location.href = result.deeplink!;
+          }
+        }, 100);
       } else {
-        // O DeepLink foi aberto, o usuário será redirecionado para o Infinite Pay
-        // O callback será tratado quando voltar ao app
-        // Por enquanto, apenas aguardar
+        setErro('Erro ao gerar link de pagamento');
+        setProcessando(false);
       }
     } catch (error: any) {
       console.error('Erro ao processar pagamento:', error);

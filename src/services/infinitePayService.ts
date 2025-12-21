@@ -82,14 +82,19 @@ export async function iniciarPagamentoInfinitePay(
     const response = await api.post('/user/pagamento/infinite-pay/checkout', payload);
 
     if (response.data.deeplink) {
-      // Abrir o DeepLink do Infinite Pay
-      if (typeof window !== 'undefined') {
-        window.location.href = response.data.deeplink;
-      }
-      
+      // Retornar o DeepLink para ser aberto pelo componente
+      // Não abrir aqui para permitir que o modal feche primeiro
       return {
         success: true,
         deeplink: response.data.deeplink,
+      };
+    }
+
+    // Verificar se há mensagem de erro na resposta
+    if (response.data.mensagem) {
+      return {
+        success: false,
+        error: response.data.mensagem,
       };
     }
 
