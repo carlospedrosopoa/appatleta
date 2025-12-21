@@ -12,7 +12,8 @@ export interface InfinitePayCheckoutParams {
 
 export interface InfinitePayCheckoutResponse {
   success: boolean;
-  deeplink?: string;
+  checkoutUrl?: string; // URL web do checkout (renomeado de deeplink)
+  deeplink?: string; // Mantido para compatibilidade
   error?: string;
   message?: string;
 }
@@ -81,12 +82,15 @@ export async function iniciarPagamentoInfinitePay(
 
     const response = await api.post('/user/pagamento/infinite-pay/checkout', payload);
 
-    if (response.data.deeplink) {
-      // Retornar o DeepLink para ser aberto pelo componente
-      // Não abrir aqui para permitir que o modal feche primeiro
+    // Priorizar checkoutUrl (web), mas manter compatibilidade com deeplink
+    const checkoutUrl = response.data.checkoutUrl || response.data.deeplink;
+    
+    if (checkoutUrl) {
+      // Retornar a URL de checkout para ser aberta pelo componente
       return {
         success: true,
-        deeplink: response.data.deeplink,
+        checkoutUrl,
+        deeplink: checkoutUrl, // Mantido para compatibilidade
       };
     }
 

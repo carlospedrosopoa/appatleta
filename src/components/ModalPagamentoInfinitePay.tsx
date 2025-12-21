@@ -119,26 +119,27 @@ export default function ModalPagamentoInfinitePay({
       if (!result.success) {
         setErro(result.error || 'Erro ao processar pagamento');
         setProcessando(false);
-      } else if (result.deeplink) {
-        // O DeepLink foi gerado
+      } else if (result.checkoutUrl || result.deeplink) {
+        // A URL de checkout foi gerada (web ou DeepLink)
+        const checkoutUrl = result.checkoutUrl || result.deeplink;
         setProcessando(false);
         
-        // Tentar abrir o DeepLink usando window.location
-        // Isso funciona melhor para DeepLinks em dispositivos móveis
+        // Abrir a URL de checkout em uma nova aba/janela
+        // Se for URL web (https://), funciona em qualquer navegador
+        // Se for DeepLink (infinitepay://), tentará abrir o app se instalado
         try {
-          // Usar window.location.href para abrir o DeepLink
-          // Se o app não estiver instalado, o navegador mostrará um erro
-          // mas pelo menos tentamos abrir
-          window.location.href = result.deeplink;
+          // Abrir em nova aba para não perder o contexto do app
+          window.open(checkoutUrl, '_blank');
           
-          // Fechar o modal após um pequeno delay
-          setTimeout(() => {
-            onClose();
-          }, 300);
+          // Fechar o modal
+          onClose();
+          
+          // Mostrar mensagem informativa
+          alert('Você será redirecionado para o Infinite Pay para completar o pagamento. Após o pagamento, você será redirecionado de volta para este app.');
           
         } catch (error: any) {
-          console.error('Erro ao abrir DeepLink:', error);
-          setErro('Não foi possível abrir o Infinite Pay. Certifique-se de que o app Infinite Pay está instalado no seu dispositivo. Se o problema persistir, entre em contato com o suporte.');
+          console.error('Erro ao abrir checkout:', error);
+          setErro('Não foi possível abrir o checkout. Por favor, tente novamente.');
           setProcessando(false);
         }
       } else {
