@@ -116,21 +116,66 @@ export async function iniciarPagamentoInfinitePay(
 }
 
 /**
- * Verifica o status de um pagamento
+ * Verifica o status de um pagamento usando a API do Infinite Pay
  */
-export async function verificarStatusPagamento(orderId: string): Promise<{
-  status: 'pending' | 'approved' | 'rejected' | 'cancelled';
-  transactionId?: string;
-  message?: string;
+export async function verificarStatusPagamento(
+  orderNsu: string, 
+  transactionNsu: string | null, 
+  slug: string | null
+): Promise<{
+  paid: boolean;
+  amount?: number;
+  paid_amount?: number;
+  installments?: number;
+  capture_method?: string;
 }> {
   try {
-    const response = await api.get(`/user/pagamento/infinite-pay/status/${orderId}`);
-    return response.data;
+    // Usar a API do Infinite Pay para verificar status
+    // Conforme documentação: POST https://api.infinitepay.io/invoices/public/checkout/payment_check
+    const handle = process.env.NEXT_PUBLIC_INFINITE_PAY_HANDLE || '';
+    
+    if (!handle || !transactionNsu || !slug) {
+      // Se não tiver dados completos, verificar no nosso backend
+      const response = await api.get(`/user/pagamento/infinite-pay/status/${orderNsu}`);
+      return {
+        paid: response.data.status === 'approved',
+        amount: response.data.amount,
+        paid_amount: response.data.amount,
+        capture_method: response.data.capture_method,
+      };
+    }
+
+    // Chamar API do Infinite Pay diretamente
+    const infinitePayResponse = await fetch('https://api.infinitepay.io/invoices/public/checkout/payment_check', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        handle,
+        order_nsu: orderNsu,
+        transaction_nsu: transactionNsu,
+        slug,
+      }),
+    });
+
+    if (infinitePayResponse.ok) {
+      const data = await infinitePayResponse.json();
+      return data;
+    }
+
+    // Fallback para nosso backend
+    const response = await api.get(`/user/pagamento/infinite-pay/status/${orderNsu}`);
+    return {
+      paid: response.data.status === 'approved',
+      amount: response.data.amount,
+      paid_amount: response.data.amount,
+      capture_method: response.data.capture_method,
+    };
   } catch (error: any) {
     console.error('Erro ao verificar status do pagamento:', error);
     return {
-      status: 'pending',
-      message: error.response?.data?.mensagem || 'Erro ao verificar status',
+      paid: false,
     };
   }
 }

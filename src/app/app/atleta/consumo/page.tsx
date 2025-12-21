@@ -21,29 +21,35 @@ export default function MeuConsumoPage() {
     carregarConsumo();
     
     // Verificar se há callback de pagamento na URL
+    // O Infinite Pay redireciona com: receipt_url, order_nsu, slug, capture_method, transaction_nsu
     const urlParams = new URLSearchParams(window.location.search);
-    const paymentCallback = urlParams.get('payment_callback');
-    if (paymentCallback) {
+    const orderNsu = urlParams.get('order_nsu');
+    const transactionNsu = urlParams.get('transaction_nsu');
+    const slug = urlParams.get('slug');
+    
+    if (orderNsu) {
       // Verificar status do pagamento
-      verificarStatusPagamento(paymentCallback);
-      // Limpar parâmetro da URL
+      verificarStatusPagamento(orderNsu, transactionNsu, slug);
+      // Limpar parâmetros da URL
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, [authReady, usuario, filtroStatus]);
 
-  const verificarStatusPagamento = async (orderId: string) => {
+  const verificarStatusPagamento = async (orderNsu: string, transactionNsu: string | null, slug: string | null) => {
     try {
       const { infinitePayService } = await import('@/services/infinitePayService');
-      const status = await infinitePayService.verificarStatusPagamento(orderId);
+      const status = await infinitePayService.verificarStatusPagamento(orderNsu, transactionNsu, slug);
       
-      if (status.status === 'approved') {
+      if (status.paid) {
         alert('Pagamento aprovado com sucesso!');
         carregarConsumo(); // Recarregar cards
-      } else if (status.status === 'rejected' || status.status === 'cancelled') {
-        alert(`Pagamento ${status.status === 'rejected' ? 'rejeitado' : 'cancelado'}. ${status.message || ''}`);
+      } else {
+        alert('Pagamento ainda não foi confirmado. Aguarde alguns instantes ou verifique o status.');
       }
     } catch (error) {
       console.error('Erro ao verificar status do pagamento:', error);
+      // Mesmo com erro, recarregar para ver se o webhook já processou
+      carregarConsumo();
     }
   };
 
