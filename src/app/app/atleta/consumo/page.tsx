@@ -15,6 +15,8 @@ export default function MeuConsumoPage() {
   const [cardExpandido, setCardExpandido] = useState<string | null>(null);
   const [modalPagamento, setModalPagamento] = useState(false);
   const [cardParaPagar, setCardParaPagar] = useState<CardClienteConsumo | null>(null);
+  const [aguardandoWebhook, setAguardandoWebhook] = useState(false);
+  const [orderIdAguardando, setOrderIdAguardando] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authReady || !usuario) return;
@@ -36,21 +38,72 @@ export default function MeuConsumoPage() {
   }, [authReady, usuario, filtroStatus]);
 
   const verificarStatusPagamento = async (orderNsu: string, transactionNsu: string | null, slug: string | null) => {
-    try {
-      const { infinitePayService } = await import('@/services/infinitePayService');
-      const status = await infinitePayService.verificarStatusPagamento(orderNsu, transactionNsu, slug);
-      
-      if (status.paid) {
-        alert('Pagamento aprovado com sucesso!');
-        carregarConsumo(); // Recarregar cards
-      } else {
-        alert('Pagamento ainda não foi confirmado. Aguarde alguns instantes ou verifique o status.');
+    setAguardandoWebhook(true);
+    setOrderIdAguardando(orderNsu);
+    
+    let tentativas = 0;
+    const maxTentativas = 30; // 30 tentativas = ~1 minuto (2 segundos por tentativa)
+    
+    const verificar = async (): Promise<boolean> => {
+      try {
+        // Verificar status no backend (se o webhook já processou)
+        const { api } = await import('@/lib/api');
+        const statusResponse = await api.get(`/user/pagamento/infinite-pay/status/${orderNsu}`);
+        
+        // Se o status for APPROVED, verificar se o pagamento foi criado no card
+        if (statusResponse.data.status === 'APPROVED' || statusResponse.data.status === 'approved') {
+          // Recarregar cards para verificar se o pagamento foi processado
+          await carregarConsumo();
+          
+          // Aguardar um pouco para garantir que o banco foi atualizado
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          // Verificar novamente os cards atualizados
+          const statusAtualizado = await api.get(`/user/pagamento/infinite-pay/status/${orderNsu}`);
+          
+          if (statusAtualizado.data.status === 'APPROVED' || statusAtualizado.data.status === 'approved') {
+            // Pagamento processado com sucesso
+            setAguardandoWebhook(false);
+            setOrderIdAguardando(null);
+            return true;
+          }
+        }
+        
+        return false;
+      } catch (error) {
+        console.error('Erro ao verificar status do pagamento:', error);
+        // Se der erro mas já tentamos várias vezes, considerar processado
+        if (tentativas >= 10) {
+          await carregarConsumo();
+          setAguardandoWebhook(false);
+          setOrderIdAguardando(null);
+          return true;
+        }
+        return false;
       }
-    } catch (error) {
-      console.error('Erro ao verificar status do pagamento:', error);
-      // Mesmo com erro, recarregar para ver se o webhook já processou
-      carregarConsumo();
+    };
+    
+    // Primeira verificação imediata
+    const processado = await verificar();
+    if (processado) {
+      return;
     }
+    
+    // Polling: verificar a cada 2 segundos
+    const intervalId = setInterval(async () => {
+      tentativas++;
+      const processado = await verificar();
+      
+      if (processado || tentativas >= maxTentativas) {
+        clearInterval(intervalId);
+        if (tentativas >= maxTentativas && !processado) {
+          // Timeout - mesmo assim recarregar e fechar
+          await carregarConsumo();
+          setAguardandoWebhook(false);
+          setOrderIdAguardando(null);
+        }
+      }
+    }, 2000); // Verificar a cada 2 segundos
   };
 
   const carregarConsumo = async () => {
@@ -350,6 +403,46 @@ export default function MeuConsumoPage() {
           carregarConsumo(); // Recarregar lista de cards
         }}
       />
+
+      {/* Modal de Aguardando Webhook */}
+      {aguardandoWebhook && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-8 text-center">
+            <div className="mb-6">
+              <div className="w-16 h-16 mx-auto mb-4 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                Processando pagamento...
+              </h3>
+              <p className="text-gray-600 text-sm">
+                Aguarde enquanto confirmamos seu pagamento.
+              </p>
+              <p className="text-gray-500 text-xs mt-2">
+                Isso pode levar alguns segundos.
+              </p>
+            </div>
+            
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left">
+              <div className="flex items-start gap-2">
+                <CheckCircle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                <div className="text-sm text-blue-800">
+                  <p className="font-semibold mb-1">O que está acontecendo:</p>
+                  <ol className="list-decimal list-inside space-y-1 text-xs">
+                    <li>Pagamento aprovado pelo Infinite Pay</li>
+                    <li>Aguardando confirmação no sistema</li>
+                    <li>Lançando pagamento no seu card</li>
+                  </ol>
+                </div>
+              </div>
+            </div>
+            
+            {orderIdAguardando && (
+              <p className="text-xs text-gray-400 mt-4">
+                ID: {orderIdAguardando.substring(0, 20)}...
+              </p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
