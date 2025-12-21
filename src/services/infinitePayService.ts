@@ -66,13 +66,20 @@ export async function iniciarPagamentoInfinitePay(
 ): Promise<InfinitePayCheckoutResponse> {
   try {
     // Primeiro, criar a ordem de pagamento no backend
-    const response = await api.post('/user/pagamento/infinite-pay/checkout', {
+    const payload: any = {
       cardId: params.cardId,
       valor: params.valor,
       orderId: params.orderId,
       descricao: params.descricao,
       parcelas: params.parcelas,
-    });
+    };
+
+    // Adicionar CPF se fornecido
+    if (params.cpf) {
+      payload.cpf = params.cpf;
+    }
+
+    const response = await api.post('/user/pagamento/infinite-pay/checkout', payload);
 
     if (response.data.deeplink) {
       // Abrir o DeepLink do Infinite Pay
