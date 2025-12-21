@@ -79,7 +79,15 @@ async function apiRequest(
   }
   
   // Construir URL completa
-  const url = `${BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+  // Garantir que BASE_URL não tenha barra no final e endpoint comece com barra
+  const baseUrl = BASE_URL.endsWith('/') ? BASE_URL.slice(0, -1) : BASE_URL;
+  const endpointPath = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  const url = `${baseUrl}${endpointPath}`;
+  
+  // Debug: log da URL construída (apenas em desenvolvimento)
+  if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+    console.log('[API] Construindo URL:', { BASE_URL, endpoint, url });
+  }
   
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
