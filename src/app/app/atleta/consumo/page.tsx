@@ -18,9 +18,15 @@ export default function MeuConsumoPage() {
   const [aguardandoWebhook, setAguardandoWebhook] = useState(false);
   const [orderIdAguardando, setOrderIdAguardando] = useState<string | null>(null);
 
+  // Carregar consumo quando autenticação estiver pronta ou quando filtro mudar
   useEffect(() => {
     if (!authReady || !usuario) return;
     carregarConsumo();
+  }, [authReady, usuario, filtroStatus]);
+
+  // Verificar callback de pagamento apenas uma vez quando a página carregar
+  useEffect(() => {
+    if (!authReady || !usuario) return;
     
     // Verificar se há callback de pagamento na URL
     // O Infinite Pay pode redirecionar com: payment_callback (nosso parâmetro), order_nsu, transaction_nsu, slug, capture_method
