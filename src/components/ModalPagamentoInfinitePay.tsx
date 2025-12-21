@@ -247,9 +247,9 @@ export default function ModalPagamentoInfinitePay({
                   <p className="font-semibold mb-1">Como funciona:</p>
                   <ol className="list-decimal list-inside space-y-1 text-xs">
                     <li>Clique em "Pagar Agora!"</li>
-                    <li>Você será redirecionado para o app Infinite Pay</li>
-                    <li>Complete o pagamento no app Infinite Pay</li>
-                    <li>Volte para este app para confirmar</li>
+                    <li>Você será redirecionado para o Infinite Pay</li>
+                    <li>Complete o pagamento na página do Infinite Pay</li>
+                    <li>Você será redirecionado de volta automaticamente</li>
                   </ol>
                 </div>
               </div>
