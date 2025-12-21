@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { consumoService, type CardClienteConsumo, type StatusCard } from '@/services/consumoService';
 import { Calendar, CreditCard, MapPin, Clock, CheckCircle, XCircle, ShoppingCart, DollarSign, ChevronDown, ChevronUp, FileText } from 'lucide-react';
+import ModalPagamentoInfinitePay from '@/components/ModalPagamentoInfinitePay';
 
 export default function MeuConsumoPage() {
   const { authReady, usuario } = useAuth();
@@ -12,11 +13,39 @@ export default function MeuConsumoPage() {
   const [loading, setLoading] = useState(true);
   const [filtroStatus, setFiltroStatus] = useState<StatusCard | 'TODOS'>('ABERTO');
   const [cardExpandido, setCardExpandido] = useState<string | null>(null);
+  const [modalPagamento, setModalPagamento] = useState(false);
+  const [cardParaPagar, setCardParaPagar] = useState<CardClienteConsumo | null>(null);
 
   useEffect(() => {
     if (!authReady || !usuario) return;
     carregarConsumo();
+    
+    // Verificar se há callback de pagamento na URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentCallback = urlParams.get('payment_callback');
+    if (paymentCallback) {
+      // Verificar status do pagamento
+      verificarStatusPagamento(paymentCallback);
+      // Limpar parâmetro da URL
+      window.history.replaceState({}, '', window.location.pathname);
+    }
   }, [authReady, usuario, filtroStatus]);
+
+  const verificarStatusPagamento = async (orderId: string) => {
+    try {
+      const { infinitePayService } = await import('@/services/infinitePayService');
+      const status = await infinitePayService.verificarStatusPagamento(orderId);
+      
+      if (status.status === 'approved') {
+        alert('Pagamento aprovado com sucesso!');
+        carregarConsumo(); // Recarregar cards
+      } else if (status.status === 'rejected' || status.status === 'cancelled') {
+        alert(`Pagamento ${status.status === 'rejected' ? 'rejeitado' : 'cancelado'}. ${status.message || ''}`);
+      }
+    } catch (error) {
+      console.error('Erro ao verificar status do pagamento:', error);
+    }
+  };
 
   const carregarConsumo = async () => {
     try {
@@ -265,6 +294,32 @@ export default function MeuConsumoPage() {
                           <p className="text-gray-700 whitespace-pre-line">{card.observacoes}</p>
                         </div>
                       )}
+
+                      {/* Botão de pagamento - apenas para cards abertos com saldo */}
+                      {card.status === 'ABERTO' && saldo > 0 && (
+                        <div className="bg-white rounded-lg border-2 border-blue-200 p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <div>
+                              <div className="text-sm font-semibold text-gray-800 mb-1">
+                                Saldo pendente
+                              </div>
+                              <div className="text-2xl font-bold text-red-600">
+                                {formatarMoeda(saldo)}
+                              </div>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => {
+                              setCardParaPagar(card);
+                              setModalPagamento(true);
+                            }}
+                            className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold flex items-center justify-center gap-2"
+                          >
+                            <CreditCard className="w-5 h-5" />
+                            Pagar com Infinite Pay
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -273,6 +328,22 @@ export default function MeuConsumoPage() {
           </div>
         )}
       </div>
+
+      {/* Modal de Pagamento */}
+      <ModalPagamentoInfinitePay
+        isOpen={modalPagamento}
+        card={cardParaPagar}
+        valorPagar={cardParaPagar ? (cardParaPagar.saldo ?? cardParaPagar.valorTotal - (cardParaPagar.totalPago ?? 0)) : 0}
+        onClose={() => {
+          setModalPagamento(false);
+          setCardParaPagar(null);
+        }}
+        onSuccess={() => {
+          setModalPagamento(false);
+          setCardParaPagar(null);
+          carregarConsumo(); // Recarregar lista de cards
+        }}
+      />
     </div>
   );
 }
