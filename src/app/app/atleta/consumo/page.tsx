@@ -321,23 +321,28 @@ export default function MeuConsumoPage() {
                             <DollarSign className="w-4 h-4" />
                             Pagamentos
                           </div>
-                          <div className="space-y-1.5 text-xs sm:text-sm">
+                          <div className="space-y-2 text-xs sm:text-sm">
                             {card.pagamentos.map((pag, idx) => (
-                              <div key={pag.id} className="flex justify-between gap-3">
-                                <div className="flex-1">
-                                  <div className="font-medium">
-                                    {idx + 1}. {pag.formaPagamento?.nome || 'Pagamento'}
+                              <div key={pag.id} className="border-b border-gray-100 last:border-0 pb-2 last:pb-0">
+                                <div className="flex justify-between items-start gap-3 mb-1">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="font-medium text-gray-900">
+                                      {idx + 1}. {pag.formaPagamento?.nome || 'Pagamento'}
+                                    </div>
                                   </div>
-                                  {pag.observacoes && (
-                                    <div className="text-gray-500">Obs: {pag.observacoes}</div>
-                                  )}
-                                </div>
-                                <div className="text-right text-gray-700">
-                                  <div className="font-semibold">{formatarMoeda(pag.valor)}</div>
-                                  <div className="text-[11px] text-gray-500">
-                                    {formatarDataHora(pag.createdAt)}
+                                  <div className="text-right text-gray-700 flex-shrink-0">
+                                    <div className="font-semibold">{formatarMoeda(pag.valor)}</div>
+                                    <div className="text-[11px] text-gray-500">
+                                      {formatarDataHora(pag.createdAt)}
+                                    </div>
                                   </div>
                                 </div>
+                                {pag.observacoes && (
+                                  <div className="mt-1.5 text-[11px] text-gray-500 break-words">
+                                    <span className="font-medium">Obs:</span>{' '}
+                                    <span className="whitespace-pre-wrap">{pag.observacoes}</span>
+                                  </div>
+                                )}
                               </div>
                             ))}
                           </div>
