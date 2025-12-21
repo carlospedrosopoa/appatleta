@@ -7,6 +7,7 @@ export interface InfinitePayCheckoutParams {
   orderId: string; // ID único da ordem de pagamento
   descricao?: string;
   parcelas?: number;
+  cpf?: string; // CPF do atleta (quando não estiver cadastrado no perfil)
 }
 
 export interface InfinitePayCheckoutResponse {

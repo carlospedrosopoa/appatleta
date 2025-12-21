@@ -316,7 +316,7 @@ export default function MeuConsumoPage() {
                             className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold flex items-center justify-center gap-2"
                           >
                             <CreditCard className="w-5 h-5" />
-                            Pagar com Infinite Pay
+                            Pagar Agora!
                           </button>
                         </div>
                       )}

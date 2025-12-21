@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { X, CreditCard, AlertCircle, CheckCircle, Loader } from 'lucide-react';
 import { infinitePayService, type InfinitePayCheckoutParams } from '@/services/infinitePayService';
 import type { CardClienteConsumo } from '@/services/consumoService';
+import { userAtletaService } from '@/services/userAtletaService';
 
 interface ModalPagamentoInfinitePayProps {
   isOpen: boolean;
@@ -25,6 +26,9 @@ export default function ModalPagamentoInfinitePay({
   const [processando, setProcessando] = useState(false);
   const [erro, setErro] = useState('');
   const [orderId, setOrderId] = useState<string | null>(null);
+  const [cpf, setCpf] = useState('');
+  const [cpfNecessario, setCpfNecessario] = useState(false);
+  const [verificandoCpf, setVerificandoCpf] = useState(true);
 
   useEffect(() => {
     if (isOpen && card) {
@@ -33,14 +37,69 @@ export default function ModalPagamentoInfinitePay({
       setErro('');
       setParcelas(1);
       setProcessando(false);
+      setCpf('');
+      setCpfNecessario(false);
+      setVerificandoCpf(true);
+      
+      // Verificar se o atleta tem CPF cadastrado
+      verificarCpfAtleta();
     }
   }, [isOpen, card]);
+
+  const verificarCpfAtleta = async () => {
+    try {
+      const atleta = await userAtletaService.obter();
+      // Verificar se o atleta tem CPF (assumindo que pode estar em um campo futuro ou precisar ser solicitado)
+      // Por enquanto, vamos sempre solicitar o CPF se não estiver na resposta
+      // TODO: Quando o campo CPF for adicionado ao perfil do atleta, verificar aqui
+      setCpfNecessario(true); // Sempre solicitar CPF por enquanto
+      setVerificandoCpf(false);
+    } catch (error) {
+      console.error('Erro ao verificar perfil do atleta:', error);
+      // Se não conseguir buscar o perfil, solicitar CPF
+      setCpfNecessario(true);
+      setVerificandoCpf(false);
+    }
+  };
+
+  const formatarCpf = (value: string) => {
+    // Remove tudo que não é dígito
+    const apenasDigitos = value.replace(/\D/g, '');
+    
+    // Limita a 11 dígitos
+    const cpfLimitado = apenasDigitos.slice(0, 11);
+    
+    // Aplica a máscara
+    if (cpfLimitado.length <= 3) {
+      return cpfLimitado;
+    } else if (cpfLimitado.length <= 6) {
+      return `${cpfLimitado.slice(0, 3)}.${cpfLimitado.slice(3)}`;
+    } else if (cpfLimitado.length <= 9) {
+      return `${cpfLimitado.slice(0, 3)}.${cpfLimitado.slice(3, 6)}.${cpfLimitado.slice(6)}`;
+    } else {
+      return `${cpfLimitado.slice(0, 3)}.${cpfLimitado.slice(3, 6)}.${cpfLimitado.slice(6, 9)}-${cpfLimitado.slice(9)}`;
+    }
+  };
+
+  const validarCpf = (cpf: string): boolean => {
+    const apenasDigitos = cpf.replace(/\D/g, '');
+    return apenasDigitos.length === 11;
+  };
 
   const formatarMoeda = (valor: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
 
   const handlePagar = async () => {
     if (!card || !orderId) return;
+
+    // Validar CPF se necessário
+    if (cpfNecessario) {
+      const cpfLimpo = cpf.replace(/\D/g, '');
+      if (!validarCpf(cpfLimpo)) {
+        setErro('Por favor, informe um CPF válido');
+        return;
+      }
+    }
 
     setProcessando(true);
     setErro('');
@@ -52,6 +111,7 @@ export default function ModalPagamentoInfinitePay({
         orderId,
         descricao: `Pagamento Card #${card.numeroCard} - ${card.pointNome}`,
         parcelas: parcelas > 1 ? parcelas : undefined,
+        cpf: cpfNecessario ? cpf.replace(/\D/g, '') : undefined,
       };
 
       const result = await infinitePayService.iniciarPagamentoInfinitePay(params);
@@ -133,6 +193,31 @@ export default function ModalPagamentoInfinitePay({
               </div>
             )}
 
+            {verificandoCpf ? (
+              <div className="text-center py-4">
+                <Loader className="w-5 h-5 animate-spin mx-auto text-blue-600" />
+                <p className="text-sm text-gray-600 mt-2">Verificando dados...</p>
+              </div>
+            ) : cpfNecessario && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  CPF <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={cpf}
+                  onChange={(e) => setCpf(formatarCpf(e.target.value))}
+                  placeholder="000.000.000-00"
+                  maxLength={14}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={processando}
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  CPF necessário para processar o pagamento
+                </p>
+              </div>
+            )}
+
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
               <div className="flex items-start gap-2">
                 <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
@@ -160,7 +245,7 @@ export default function ModalPagamentoInfinitePay({
           </button>
           <button
             onClick={handlePagar}
-            disabled={processando || valorPagar <= 0}
+            disabled={processando || valorPagar <= 0 || (cpfNecessario && !validarCpf(cpf))}
             className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
           >
             {processando ? (
@@ -171,7 +256,7 @@ export default function ModalPagamentoInfinitePay({
             ) : (
               <>
                 <CreditCard className="w-4 h-4" />
-                Pagar com Infinite Pay
+                Pagar Agora!
               </>
             )}
           </button>
