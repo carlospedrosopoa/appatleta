@@ -123,32 +123,22 @@ export default function ModalPagamentoInfinitePay({
         // O DeepLink foi gerado
         setProcessando(false);
         
-        // Tentar abrir o DeepLink
+        // Tentar abrir o DeepLink usando window.location
+        // Isso funciona melhor para DeepLinks em dispositivos móveis
         try {
-          // Primeiro, tentar abrir diretamente
-          const link = document.createElement('a');
-          link.href = result.deeplink;
-          link.style.display = 'none';
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
+          // Usar window.location.href para abrir o DeepLink
+          // Se o app não estiver instalado, o navegador mostrará um erro
+          // mas pelo menos tentamos abrir
+          window.location.href = result.deeplink;
           
           // Fechar o modal após um pequeno delay
           setTimeout(() => {
             onClose();
-          }, 500);
+          }, 300);
           
-          // Se após 2 segundos não redirecionou, mostrar mensagem
-          setTimeout(() => {
-            // Verificar se ainda está na mesma página
-            if (document.visibilityState === 'visible') {
-              setErro('Não foi possível abrir o Infinite Pay. Certifique-se de que o app está instalado no seu dispositivo.');
-              setProcessando(false);
-            }
-          }, 2000);
-        } catch (error) {
+        } catch (error: any) {
           console.error('Erro ao abrir DeepLink:', error);
-          setErro('Não foi possível abrir o Infinite Pay. Certifique-se de que o app está instalado no seu dispositivo.');
+          setErro('Não foi possível abrir o Infinite Pay. Certifique-se de que o app Infinite Pay está instalado no seu dispositivo. Se o problema persistir, entre em contato com o suporte.');
           setProcessando(false);
         }
       } else {
