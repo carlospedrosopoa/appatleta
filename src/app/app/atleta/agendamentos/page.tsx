@@ -397,16 +397,16 @@ export default function AgendamentosPage() {
 
                         {/* Status e Logo */}
                         <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
-                          <div className="flex items-center gap-2 flex-wrap justify-end">
+                          <div className="flex items-center gap-1.5 flex-wrap justify-end">
                             {getStatusBadge(agendamento.status)}
                             {agendamento.recorrenciaId && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-medium bg-indigo-100 text-indigo-700">
+                              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-medium bg-indigo-100 text-indigo-700 whitespace-nowrap">
                                 <Repeat className="w-2.5 h-2.5" />
-                                Horário Fixo
+                                Fixo
                               </span>
                             )}
                             {isPassado && (
-                              <span className="px-2 py-0.5 rounded-full text-[9px] font-medium bg-gray-100 text-gray-600">
+                              <span className="px-1.5 py-0.5 rounded-full text-[9px] font-medium bg-gray-100 text-gray-600 whitespace-nowrap">
                                 Passado
                               </span>
                             )}
@@ -506,24 +506,32 @@ export default function AgendamentosPage() {
 
                         {/* Informações adicionais */}
                         {agendamento.recorrenciaId && agendamento.recorrenciaConfig && (
-                          <div className="p-2.5 bg-indigo-50 rounded-lg border border-indigo-200">
-                            <p className="text-xs font-medium text-indigo-700 mb-1 flex items-center gap-1.5">
-                              <Repeat className="w-3.5 h-3.5" />
-                              Horário Fixo (Recorrente)
-                            </p>
-                            <p className="text-sm text-indigo-600">
-                              {agendamento.recorrenciaConfig.tipo === 'DIARIO' && 'Todos os dias'}
-                              {agendamento.recorrenciaConfig.tipo === 'SEMANAL' && 
-                                (agendamento.recorrenciaConfig.intervalo && agendamento.recorrenciaConfig.intervalo > 1
-                                  ? `A cada ${agendamento.recorrenciaConfig.intervalo} semanas`
-                                  : 'Toda semana')}
-                              {agendamento.recorrenciaConfig.tipo === 'MENSAL' && 'Todo mês'}
+                          <div className="p-3 bg-indigo-50 rounded-lg border border-indigo-200">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Repeat className="w-4 h-4 text-indigo-600" />
+                              <p className="text-sm font-semibold text-indigo-700">
+                                Horário Fixo
+                              </p>
+                            </div>
+                            <div className="text-sm text-indigo-600 space-y-1">
+                              <p>
+                                {agendamento.recorrenciaConfig.tipo === 'DIARIO' && 'Todos os dias'}
+                                {agendamento.recorrenciaConfig.tipo === 'SEMANAL' && 
+                                  (agendamento.recorrenciaConfig.intervalo && agendamento.recorrenciaConfig.intervalo > 1
+                                    ? `A cada ${agendamento.recorrenciaConfig.intervalo} semanas`
+                                    : 'Toda semana')}
+                                {agendamento.recorrenciaConfig.tipo === 'MENSAL' && 'Todo mês'}
+                              </p>
                               {agendamento.recorrenciaConfig.dataFim && (
-                                <span className="text-xs text-indigo-500 block mt-1">
-                                  Até {new Date(agendamento.recorrenciaConfig.dataFim).toLocaleDateString('pt-BR')}
-                                </span>
+                                <p className="text-xs text-indigo-500">
+                                  Válido até {new Date(agendamento.recorrenciaConfig.dataFim).toLocaleDateString('pt-BR', {
+                                    day: '2-digit',
+                                    month: 'long',
+                                    year: 'numeric'
+                                  })}
+                                </p>
                               )}
-                            </p>
+                            </div>
                           </div>
                         )}
 
