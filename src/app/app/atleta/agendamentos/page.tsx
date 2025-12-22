@@ -10,7 +10,7 @@ import EditarAgendamentoModal from '@/components/EditarAgendamentoModal';
 import QuadrasDisponiveisPorHorarioModal from '@/components/QuadrasDisponiveisPorHorarioModal';
 import ConfirmarCancelamentoRecorrenteModal from '@/components/ConfirmarCancelamentoRecorrenteModal';
 import type { Agendamento, StatusAgendamento } from '@/types/agendamento';
-import { Calendar, Clock, MapPin, Plus, X, CheckCircle, XCircle, CalendarCheck, User, Users, UserPlus, Edit, ChevronDown, ChevronUp } from 'lucide-react';
+import { Calendar, Clock, MapPin, Plus, X, CheckCircle, XCircle, CalendarCheck, User, Users, UserPlus, Edit, ChevronDown, ChevronUp, Repeat } from 'lucide-react';
 
 export default function AgendamentosPage() {
   const router = useRouter();
@@ -230,6 +230,37 @@ export default function AgendamentosPage() {
     };
   };
 
+  // Agrupar agendamentos recorrentes e retornar apenas um representante por grupo
+  const processarAgendamentosParaExibicao = (agendamentos: Agendamento[]): Agendamento[] => {
+    const agendamentosNaoRecorrentes = agendamentos.filter(ag => !ag.recorrenciaId);
+    const agendamentosRecorrentesPorGrupo = new Map<string, Agendamento[]>();
+
+    // Agrupar agendamentos recorrentes por recorrenciaId
+    agendamentos.forEach(ag => {
+      if (ag.recorrenciaId) {
+        const grupo = agendamentosRecorrentesPorGrupo.get(ag.recorrenciaId) || [];
+        grupo.push(ag);
+        agendamentosRecorrentesPorGrupo.set(ag.recorrenciaId, grupo);
+      }
+    });
+
+    // Para cada grupo de recorrência, pegar apenas o primeiro agendamento (mais próximo)
+    const representantesRecorrentes: Agendamento[] = [];
+    agendamentosRecorrentesPorGrupo.forEach((grupo, recorrenciaId) => {
+      // Ordenar por data e pegar o primeiro (mais próximo no futuro, ou o primeiro da lista)
+      const ordenado = [...grupo].sort((a, b) => 
+        new Date(a.dataHora).getTime() - new Date(b.dataHora).getTime()
+      );
+      representantesRecorrentes.push(ordenado[0]);
+    });
+
+    // Combinar não recorrentes com representantes de recorrentes e ordenar por data
+    const todos = [...agendamentosNaoRecorrentes, ...representantesRecorrentes];
+    return todos.sort((a, b) => 
+      new Date(a.dataHora).getTime() - new Date(b.dataHora).getTime()
+    );
+  };
+
   const formatCurrency = (v: number | null) =>
     v == null
       ? '—'
@@ -291,7 +322,7 @@ export default function AgendamentosPage() {
             </div>
           ) : (
             <div className="space-y-2">
-              {agendamentos.map((agendamento) => {
+              {processarAgendamentosParaExibicao(agendamentos).map((agendamento) => {
                 // Extrair data/hora diretamente da string UTC sem conversão de timezone
                 // Isso garante que 20h gravado = 20h exibido (igual ao organizer)
                 const dataHoraStr = agendamento.dataHora;
@@ -366,8 +397,14 @@ export default function AgendamentosPage() {
 
                         {/* Status e Logo */}
                         <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap justify-end">
                             {getStatusBadge(agendamento.status)}
+                            {agendamento.recorrenciaId && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-medium bg-indigo-100 text-indigo-700">
+                                <Repeat className="w-2.5 h-2.5" />
+                                Horário Fixo
+                              </span>
+                            )}
                             {isPassado && (
                               <span className="px-2 py-0.5 rounded-full text-[9px] font-medium bg-gray-100 text-gray-600">
                                 Passado
@@ -468,6 +505,28 @@ export default function AgendamentosPage() {
                         </div>
 
                         {/* Informações adicionais */}
+                        {agendamento.recorrenciaId && agendamento.recorrenciaConfig && (
+                          <div className="p-2.5 bg-indigo-50 rounded-lg border border-indigo-200">
+                            <p className="text-xs font-medium text-indigo-700 mb-1 flex items-center gap-1.5">
+                              <Repeat className="w-3.5 h-3.5" />
+                              Horário Fixo (Recorrente)
+                            </p>
+                            <p className="text-sm text-indigo-600">
+                              {agendamento.recorrenciaConfig.tipo === 'DIARIO' && 'Todos os dias'}
+                              {agendamento.recorrenciaConfig.tipo === 'SEMANAL' && 
+                                (agendamento.recorrenciaConfig.intervalo && agendamento.recorrenciaConfig.intervalo > 1
+                                  ? `A cada ${agendamento.recorrenciaConfig.intervalo} semanas`
+                                  : 'Toda semana')}
+                              {agendamento.recorrenciaConfig.tipo === 'MENSAL' && 'Todo mês'}
+                              {agendamento.recorrenciaConfig.dataFim && (
+                                <span className="text-xs text-indigo-500 block mt-1">
+                                  Até {new Date(agendamento.recorrenciaConfig.dataFim).toLocaleDateString('pt-BR')}
+                                </span>
+                              )}
+                            </p>
+                          </div>
+                        )}
+
                         {agendamento.quadra.tipo && (
                           <div>
                             <p className="text-xs font-medium text-gray-500 mb-0.5">Tipo de Quadra</p>
