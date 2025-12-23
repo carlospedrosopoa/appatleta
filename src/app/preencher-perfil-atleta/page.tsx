@@ -11,7 +11,6 @@ interface AtletaForm {
   nome: string;
   dataNascimento: string;
   genero: string;
-  categoria: string;
   esportePreferido: string;
   esportesPratica: string[];
 }
@@ -24,7 +23,6 @@ export default function PreencherPerfilAtletaPage() {
     nome: '',
     dataNascimento: '',
     genero: '',
-    categoria: '',
     esportePreferido: '',
     esportesPratica: [],
   });
@@ -72,7 +70,6 @@ export default function PreencherPerfilAtletaPage() {
             nome: atleta.nome || '',
             dataNascimento: atleta.dataNascimento ? atleta.dataNascimento.split('T')[0] : '',
             genero: atleta.genero || '',
-            categoria: atleta.categoria || '',
             esportePreferido: atleta.esportePreferido || '',
             esportesPratica: atleta.esportesPratica || [],
           });
@@ -246,24 +243,6 @@ export default function PreencherPerfilAtletaPage() {
             <option value="MASCULINO">Masculino</option>
             <option value="FEMININO">Feminino</option>
             <option value="OUTRO">Outro</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block font-semibold mb-1">Categoria</label>
-          <select
-            name="categoria"
-            value={form.categoria}
-            onChange={handleChange}
-            className="w-full p-2 border rounded"
-          >
-            <option value="">Selecione a categoria</option>
-            <option value="INICIANTE">INICIANTE</option>
-            <option value="D">D</option>
-            <option value="C">C</option>
-            <option value="B">B</option>
-            <option value="A">A</option>
-            <option value="PRO">PRO</option>
           </select>
         </div>
 
