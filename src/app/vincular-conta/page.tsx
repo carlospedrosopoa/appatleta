@@ -21,7 +21,6 @@ export default function VincularContaPage() {
   const [confirmarSenha, setConfirmarSenha] = useState('');
   const [nome, setNome] = useState('');
   const [dataNascimento, setDataNascimento] = useState('');
-  const [categoria, setCategoria] = useState('');
   const [genero, setGenero] = useState('');
   
   const router = useRouter();
@@ -94,9 +93,6 @@ export default function VincularContaPage() {
 
       if (dataNascimento) {
         dadosAtleta.dataNascimento = dataNascimento;
-      }
-      if (categoria) {
-        dadosAtleta.categoria = categoria;
       }
       if (genero) {
         dadosAtleta.genero = genero;
@@ -250,21 +246,6 @@ export default function VincularContaPage() {
                     <option value="F">Feminino</option>
                     <option value="OUTRO">Outro</option>
                   </select>
-                </div>
-
-                <div>
-                  <label htmlFor="categoria" className="block text-sm font-medium text-gray-700 mb-2">
-                    Categoria
-                  </label>
-                  <input
-                    id="categoria"
-                    type="text"
-                    value={categoria}
-                    onChange={(e) => setCategoria(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                    placeholder="Ex: Sub-20, Adulto"
-                    disabled={carregando}
-                  />
                 </div>
               </div>
 
