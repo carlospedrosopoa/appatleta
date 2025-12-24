@@ -34,7 +34,6 @@ export default function NovaPartidaModal({
   
   const [data, setData] = useState(dataPadrao);
   const [hora, setHora] = useState(horaPadrao);
-  const [local, setLocal] = useState('');
   const [pointId, setPointId] = useState<string>('');
   const [atleta1Id, setAtleta1Id] = useState<string>(atletaAtualId || '');
   const [atleta2Id, setAtleta2Id] = useState<string>('');
@@ -186,11 +185,7 @@ export default function NovaPartidaModal({
       return;
     }
 
-    if (!local.trim()) {
-      setErro('Local é obrigatório');
-      setSalvando(false);
-      return;
-    }
+    // Local não é mais obrigatório, vamos usar o nome da arena selecionada ou um valor padrão
 
     // Verificar se não há atletas duplicados
     const atletasSelecionados = [atleta1Id, atleta2Id, atleta3Id, atleta4Id].filter(Boolean);
@@ -206,9 +201,13 @@ export default function NovaPartidaModal({
       // Formato esperado: "2024-01-15T10:00:00.000Z"
       const dataHoraISO = new Date(`${dataFinal}T${horaFinal}:00`).toISOString();
       
+      // Se uma arena foi selecionada, usar o nome dela como local, senão usar valor padrão
+      const arenaSelecionada = arenas.find(a => a.id === pointId);
+      const localParaSalvar = arenaSelecionada ? arenaSelecionada.nome : 'Partida';
+      
       const dadosPartida = {
         data: dataHoraISO,
-        local: local.trim(),
+        local: localParaSalvar,
         pointId: pointId || null,
         atleta1Id,
         atleta2Id,
@@ -307,47 +306,6 @@ export default function NovaPartidaModal({
             <p className="text-xs text-gray-500 mt-1">
               Selecionar a arena permite usar o template de card personalizado dela.
             </p>
-          </div>
-
-          {/* Arena */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Arena (opcional)
-            </label>
-            <select
-              value={pointId}
-              onChange={(e) => setPointId(e.target.value)}
-              disabled={carregandoArenas}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white"
-            >
-              <option value="">Selecione uma arena (opcional)</option>
-              {arenas.map((arena) => (
-                <option key={arena.id} value={arena.id}>
-                  {arena.nome}
-                </option>
-              ))}
-            </select>
-            {carregandoArenas && (
-              <p className="text-xs text-gray-500 mt-1">Carregando arenas...</p>
-            )}
-            <p className="text-xs text-gray-500 mt-1">
-              Selecionar a arena permite usar o template de card personalizado dela.
-            </p>
-          </div>
-
-          {/* Local */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Local <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={local}
-              onChange={(e) => setLocal(e.target.value)}
-              placeholder="Ex: Quadra Central, Arena XYZ..."
-              required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-            />
           </div>
 
           {/* Busca de Atletas */}
