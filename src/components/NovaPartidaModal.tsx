@@ -145,7 +145,7 @@ export default function NovaPartidaModal({
     
     setData(novaDataPadrao);
     setHora(novaHoraPadrao);
-    setLocal('');
+    setPointId('');
     setAtleta1Id(atletaAtualId || '');
     setAtleta2Id('');
     setAtleta3Id('');
