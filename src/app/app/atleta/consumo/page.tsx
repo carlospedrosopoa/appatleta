@@ -15,128 +15,42 @@ export default function MeuConsumoPage() {
   const [cardExpandido, setCardExpandido] = useState<string | null>(null);
   const [modalPagamento, setModalPagamento] = useState(false);
   const [cardParaPagar, setCardParaPagar] = useState<CardClienteConsumo | null>(null);
-  const [aguardandoWebhook, setAguardandoWebhook] = useState(false);
-  const [orderIdAguardando, setOrderIdAguardando] = useState<string | null>(null);
 
-  // Carregar consumo quando autenticação estiver pronta ou quando filtro mudar
   useEffect(() => {
     if (!authReady || !usuario) return;
     carregarConsumo();
-  }, [authReady, usuario, filtroStatus]);
-
-  // Verificar callback de pagamento apenas uma vez quando a página carregar
-  useEffect(() => {
-    if (!authReady || !usuario) return;
     
     // Verificar se há callback de pagamento na URL
-    // O Infinite Pay pode redirecionar com: payment_callback (nosso parâmetro), order_nsu, transaction_nsu, slug, capture_method
+    // O Infinite Pay redireciona com: receipt_url, order_nsu, slug, capture_method, transaction_nsu
     const urlParams = new URLSearchParams(window.location.search);
-    // Priorizar payment_callback (que enviamos no redirectUrl), depois order_nsu (que o Infinite Pay pode adicionar)
-    const orderNsu = urlParams.get('payment_callback') || urlParams.get('order_nsu');
+    const orderNsu = urlParams.get('order_nsu');
     const transactionNsu = urlParams.get('transaction_nsu');
     const slug = urlParams.get('slug');
     
     if (orderNsu) {
-      console.log('[PAGAMENTO CALLBACK] Detectado na URL:', { orderNsu, transactionNsu, slug });
       // Verificar status do pagamento
       verificarStatusPagamento(orderNsu, transactionNsu, slug);
       // Limpar parâmetros da URL
       window.history.replaceState({}, '', window.location.pathname);
     }
-  }, [authReady, usuario]);
+  }, [authReady, usuario, filtroStatus]);
 
   const verificarStatusPagamento = async (orderNsu: string, transactionNsu: string | null, slug: string | null) => {
-    setAguardandoWebhook(true);
-    setOrderIdAguardando(orderNsu);
-    
-    let tentativas = 0;
-    const maxTentativas = 30; // 30 tentativas = ~1 minuto (2 segundos por tentativa)
-    let intervalId: NodeJS.Timeout | null = null;
-    
-    const fecharAguardando = () => {
-      if (intervalId) {
-        clearInterval(intervalId);
-        intervalId = null;
-      }
-      setAguardandoWebhook(false);
-      setOrderIdAguardando(null);
-    };
-    
-    const verificar = async (): Promise<boolean> => {
-      try {
-        // Verificar status no backend (se o webhook já processou)
-        const { api } = await import('@/lib/api');
-        const statusResponse = await api.get(`/user/pagamento/infinite-pay/status/${orderNsu}`);
-        
-        console.log('[PAGAMENTO STATUS]', { orderNsu, status: statusResponse.data.status, tentativas });
-        
-        // Se o status for APPROVED, pagamento foi processado
-        if (statusResponse.data.status === 'APPROVED' || statusResponse.data.status === 'approved') {
-          // Recarregar cards para mostrar o pagamento atualizado
-          await carregarConsumo();
-          
-          // Fechar modal de aguardo
-          fecharAguardando();
-          return true;
-        }
-        
-        // Se o status for PENDING mas já tentamos várias vezes, recarregar mesmo assim
-        // (pode ser que o webhook ainda não processou, mas o pagamento foi aprovado)
-        if (tentativas >= 15) {
-          console.log('[PAGAMENTO] Timeout parcial - recarregando cards mesmo com status PENDING');
-          await carregarConsumo();
-          // Aguardar mais um pouco antes de fechar
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          fecharAguardando();
-          return true;
-        }
-        
-        return false;
-      } catch (error: any) {
-        console.error('Erro ao verificar status do pagamento:', error);
-        
-        // Se der 404, significa que o orderId não existe ainda (webhook não processou)
-        // Continuar tentando
-        if (error.response?.status === 404) {
-          return false;
-        }
-        
-        // Para outros erros, se já tentamos várias vezes, recarregar e fechar
-        if (tentativas >= 10) {
-          console.log('[PAGAMENTO] Erro após várias tentativas - recarregando cards');
-          await carregarConsumo();
-          fecharAguardando();
-          return true;
-        }
-        
-        return false;
-      }
-    };
-    
-    // Primeira verificação imediata
-    const processado = await verificar();
-    if (processado) {
-      return;
-    }
-    
-    // Polling: verificar a cada 2 segundos
-    intervalId = setInterval(async () => {
-      tentativas++;
-      const processado = await verificar();
+    try {
+      const { infinitePayService } = await import('@/services/infinitePayService');
+      const status = await infinitePayService.verificarStatusPagamento(orderNsu, transactionNsu, slug);
       
-      if (processado || tentativas >= maxTentativas) {
-        if (intervalId) {
-          clearInterval(intervalId);
-          intervalId = null;
-        }
-        if (tentativas >= maxTentativas && !processado) {
-          // Timeout final - recarregar e fechar
-          console.log('[PAGAMENTO] Timeout final - recarregando cards');
-          await carregarConsumo();
-          fecharAguardando();
-        }
+      if (status.paid) {
+        alert('Pagamento aprovado com sucesso!');
+        carregarConsumo(); // Recarregar cards
+      } else {
+        alert('Pagamento ainda não foi confirmado. Aguarde alguns instantes ou verifique o status.');
       }
-    }, 2000); // Verificar a cada 2 segundos
+    } catch (error) {
+      console.error('Erro ao verificar status do pagamento:', error);
+      // Mesmo com erro, recarregar para ver se o webhook já processou
+      carregarConsumo();
+    }
   };
 
   const carregarConsumo = async () => {
@@ -354,28 +268,23 @@ export default function MeuConsumoPage() {
                             <DollarSign className="w-4 h-4" />
                             Pagamentos
                           </div>
-                          <div className="space-y-2 text-xs sm:text-sm">
+                          <div className="space-y-1.5 text-xs sm:text-sm">
                             {card.pagamentos.map((pag, idx) => (
-                              <div key={pag.id} className="border-b border-gray-100 last:border-0 pb-2 last:pb-0">
-                                <div className="flex justify-between items-start gap-3 mb-1">
-                                  <div className="flex-1 min-w-0">
-                                    <div className="font-medium text-gray-900">
-                                      {idx + 1}. {pag.formaPagamento?.nome || 'Pagamento'}
-                                    </div>
+                              <div key={pag.id} className="flex justify-between gap-3">
+                                <div className="flex-1">
+                                  <div className="font-medium">
+                                    {idx + 1}. {pag.formaPagamento?.nome || 'Pagamento'}
                                   </div>
-                                  <div className="text-right text-gray-700 flex-shrink-0">
-                                    <div className="font-semibold">{formatarMoeda(pag.valor)}</div>
-                                    <div className="text-[11px] text-gray-500">
-                                      {formatarDataHora(pag.createdAt)}
-                                    </div>
+                                  {pag.observacoes && (
+                                    <div className="text-gray-500">Obs: {pag.observacoes}</div>
+                                  )}
+                                </div>
+                                <div className="text-right text-gray-700">
+                                  <div className="font-semibold">{formatarMoeda(pag.valor)}</div>
+                                  <div className="text-[11px] text-gray-500">
+                                    {formatarDataHora(pag.createdAt)}
                                   </div>
                                 </div>
-                                {pag.observacoes && (
-                                  <div className="mt-1.5 text-[11px] text-gray-500 break-words">
-                                    <span className="font-medium">Obs:</span>{' '}
-                                    <span className="whitespace-pre-wrap">{pag.observacoes}</span>
-                                  </div>
-                                )}
                               </div>
                             ))}
                           </div>
@@ -441,46 +350,6 @@ export default function MeuConsumoPage() {
           carregarConsumo(); // Recarregar lista de cards
         }}
       />
-
-      {/* Modal de Aguardando Webhook */}
-      {aguardandoWebhook && (
-        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-8 text-center">
-            <div className="mb-6">
-              <div className="w-16 h-16 mx-auto mb-4 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                Processando pagamento...
-              </h3>
-              <p className="text-gray-600 text-sm">
-                Aguarde enquanto confirmamos seu pagamento.
-              </p>
-              <p className="text-gray-500 text-xs mt-2">
-                Isso pode levar alguns segundos.
-              </p>
-            </div>
-            
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left">
-              <div className="flex items-start gap-2">
-                <CheckCircle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                <div className="text-sm text-blue-800">
-                  <p className="font-semibold mb-1">O que está acontecendo:</p>
-                  <ol className="list-decimal list-inside space-y-1 text-xs">
-                    <li>Pagamento aprovado pelo Infinite Pay</li>
-                    <li>Aguardando confirmação no sistema</li>
-                    <li>Lançando pagamento no seu card</li>
-                  </ol>
-                </div>
-              </div>
-            </div>
-            
-            {orderIdAguardando && (
-              <p className="text-xs text-gray-400 mt-4">
-                ID: {orderIdAguardando.substring(0, 20)}...
-              </p>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

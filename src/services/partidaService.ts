@@ -6,6 +6,7 @@ import type { Partida } from '@/types/domain';
 export interface CriarPartidaPayload {
   data: string; // ISO string (ex: "2024-01-15T14:00:00.000Z")
   local: string; // String livre - recomendado incluir nome da arena e quadra
+  pointId?: string | null; // ID da arena (Point) onde a partida foi realizada - usado para buscar template de card
   atleta1Id: string; // Obrigatório
   atleta2Id: string; // Obrigatório
   atleta3Id?: string | null; // Opcional (para duplas)

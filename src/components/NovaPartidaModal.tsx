@@ -5,6 +5,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { api } from '@/lib/api';
 import { atletaService } from '@/services/atletaService';
 import { partidaService } from '@/services/partidaService';
+import { userArenaService, type Arena } from '@/services/userAtletaService';
 import type { Atleta } from '@/types/domain';
 
 interface NovaPartidaModalProps {
@@ -23,6 +24,8 @@ export default function NovaPartidaModal({
   const [atletas, setAtletas] = useState<Atleta[]>([]);
   const [carregandoAtletas, setCarregandoAtletas] = useState(false);
   const [buscaAtleta, setBuscaAtleta] = useState('');
+  const [arenas, setArenas] = useState<Arena[]>([]);
+  const [carregandoArenas, setCarregandoArenas] = useState(false);
   
   // Formulário - inicializa com valores padrão (hoje e hora atual)
   const hoje = new Date();
@@ -32,6 +35,7 @@ export default function NovaPartidaModal({
   const [data, setData] = useState(dataPadrao);
   const [hora, setHora] = useState(horaPadrao);
   const [local, setLocal] = useState('');
+  const [pointId, setPointId] = useState<string>('');
   const [atleta1Id, setAtleta1Id] = useState<string>(atletaAtualId || '');
   const [atleta2Id, setAtleta2Id] = useState<string>('');
   const [atleta3Id, setAtleta3Id] = useState<string>('');
@@ -44,10 +48,11 @@ export default function NovaPartidaModal({
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState('');
 
-  // Carregar atletas quando o modal abrir (sempre recarregar para ter dados atualizados)
+  // Carregar atletas e arenas quando o modal abrir (sempre recarregar para ter dados atualizados)
   useEffect(() => {
     if (isOpen) {
       carregarAtletas('');
+      carregarArenas();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
@@ -71,6 +76,20 @@ export default function NovaPartidaModal({
       setAtleta1Id(atletaAtualId);
     }
   }, [atletaAtualId, atleta1Id]);
+
+  const carregarArenas = async () => {
+    setCarregandoArenas(true);
+    try {
+      const data = await userArenaService.listar();
+      setArenas(data);
+    } catch (error: any) {
+      console.error('Erro ao carregar arenas:', error);
+      // Não mostrar erro para o usuário, apenas deixar lista vazia
+      setArenas([]);
+    } finally {
+      setCarregandoArenas(false);
+    }
+  };
 
   const carregarAtletas = async (termoBusca: string = '') => {
     setCarregandoAtletas(true);
@@ -190,6 +209,7 @@ export default function NovaPartidaModal({
       const dadosPartida = {
         data: dataHoraISO,
         local: local.trim(),
+        pointId: pointId || null,
         atleta1Id,
         atleta2Id,
         atleta3Id: atleta3Id || null,
@@ -261,6 +281,58 @@ export default function NovaPartidaModal({
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
               />
             </div>
+          </div>
+
+          {/* Arena */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Arena (opcional)
+            </label>
+            <select
+              value={pointId}
+              onChange={(e) => setPointId(e.target.value)}
+              disabled={carregandoArenas}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white"
+            >
+              <option value="">Selecione uma arena (opcional)</option>
+              {arenas.map((arena) => (
+                <option key={arena.id} value={arena.id}>
+                  {arena.nome}
+                </option>
+              ))}
+            </select>
+            {carregandoArenas && (
+              <p className="text-xs text-gray-500 mt-1">Carregando arenas...</p>
+            )}
+            <p className="text-xs text-gray-500 mt-1">
+              Selecionar a arena permite usar o template de card personalizado dela.
+            </p>
+          </div>
+
+          {/* Arena */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Arena (opcional)
+            </label>
+            <select
+              value={pointId}
+              onChange={(e) => setPointId(e.target.value)}
+              disabled={carregandoArenas}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white"
+            >
+              <option value="">Selecione uma arena (opcional)</option>
+              {arenas.map((arena) => (
+                <option key={arena.id} value={arena.id}>
+                  {arena.nome}
+                </option>
+              ))}
+            </select>
+            {carregandoArenas && (
+              <p className="text-xs text-gray-500 mt-1">Carregando arenas...</p>
+            )}
+            <p className="text-xs text-gray-500 mt-1">
+              Selecionar a arena permite usar o template de card personalizado dela.
+            </p>
           </div>
 
           {/* Local */}

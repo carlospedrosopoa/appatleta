@@ -87,6 +87,7 @@ export interface PartidaPanelinha {
 export interface CriarJogoPanelinhaPayload {
   data: string;
   local: string;
+  pointId?: string | null;
   atleta1Id: string;
   atleta2Id: string;
   atleta3Id?: string;

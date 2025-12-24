@@ -11,6 +11,7 @@ import {
   type PartidaPanelinha,
   type CriarJogoPanelinhaPayload
 } from '@/services/panelinhaService';
+import { userArenaService, type Arena } from '@/services/userAtletaService';
 
 interface ModalCriarPanelinhaProps {
   isOpen: boolean;
@@ -900,6 +901,9 @@ function ModalCriarJogo({ isOpen, panelinhaId, membros, onClose, onSuccess }: Mo
     return hoje.toISOString().slice(0, 16);
   });
   const [local, setLocal] = useState('');
+  const [pointId, setPointId] = useState<string>('');
+  const [arenas, setArenas] = useState<Arena[]>([]);
+  const [carregandoArenas, setCarregandoArenas] = useState(false);
   const [gamesTime1, setGamesTime1] = useState<number | null>(null);
   const [gamesTime2, setGamesTime2] = useState<number | null>(null);
   const [tiebreakTime1, setTiebreakTime1] = useState<number | null>(null);
@@ -907,16 +911,31 @@ function ModalCriarJogo({ isOpen, panelinhaId, membros, onClose, onSuccess }: Mo
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState('');
 
-  // Resetar seleções quando o modal abrir
+  // Carregar arenas e resetar seleções quando o modal abrir
   useEffect(() => {
     if (isOpen) {
+      carregarArenas();
       setAtleta1Id('');
       setAtleta2Id('');
       setAtleta3Id('');
       setAtleta4Id('');
+      setPointId('');
       setErro('');
     }
   }, [isOpen]);
+
+  const carregarArenas = async () => {
+    setCarregandoArenas(true);
+    try {
+      const data = await userArenaService.listar();
+      setArenas(data);
+    } catch (error: any) {
+      console.error('Erro ao carregar arenas:', error);
+      setArenas([]);
+    } finally {
+      setCarregandoArenas(false);
+    }
+  };
 
   const handleSelecionarAtleta = (atletaId: string) => {
     if (salvando) return;
@@ -970,6 +989,7 @@ function ModalCriarJogo({ isOpen, panelinhaId, membros, onClose, onSuccess }: Mo
       const payload: CriarJogoPanelinhaPayload = {
         data: new Date(data).toISOString(),
         local: local.trim(),
+        pointId: pointId || null,
         atleta1Id,
         atleta2Id,
         atleta3Id,
@@ -1205,6 +1225,32 @@ function ModalCriarJogo({ isOpen, panelinhaId, membros, onClose, onSuccess }: Mo
                 disabled={salvando}
               />
             </div>
+          </div>
+
+          {/* Arena */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Arena (opcional)
+            </label>
+            <select
+              value={pointId}
+              onChange={(e) => setPointId(e.target.value)}
+              disabled={carregandoArenas || salvando}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            >
+              <option value="">Selecione uma arena (opcional)</option>
+              {arenas.map((arena) => (
+                <option key={arena.id} value={arena.id}>
+                  {arena.nome}
+                </option>
+              ))}
+            </select>
+            {carregandoArenas && (
+              <p className="text-xs text-gray-500 mt-1">Carregando arenas...</p>
+            )}
+            <p className="text-xs text-gray-500 mt-1">
+              Selecionar a arena permite usar o template de card personalizado dela.
+            </p>
           </div>
 
           <div className="mb-4">
