@@ -900,7 +900,6 @@ function ModalCriarJogo({ isOpen, panelinhaId, membros, onClose, onSuccess }: Mo
     hoje.setHours(hoje.getHours() + 1);
     return hoje.toISOString().slice(0, 16);
   });
-  const [local, setLocal] = useState('');
   const [pointId, setPointId] = useState<string>('');
   const [arenas, setArenas] = useState<Arena[]>([]);
   const [carregandoArenas, setCarregandoArenas] = useState(false);
@@ -977,8 +976,8 @@ function ModalCriarJogo({ isOpen, panelinhaId, membros, onClose, onSuccess }: Mo
       return;
     }
 
-    if (!data || !local.trim()) {
-      setErro('Data e local são obrigatórios');
+    if (!data) {
+      setErro('Data e hora são obrigatórios');
       return;
     }
 
@@ -986,9 +985,13 @@ function ModalCriarJogo({ isOpen, panelinhaId, membros, onClose, onSuccess }: Mo
     setErro('');
 
     try {
+      // Se uma arena foi selecionada, usar o nome dela como local, senão usar valor padrão
+      const arenaSelecionada = arenas.find(a => a.id === pointId);
+      const localParaSalvar = arenaSelecionada ? arenaSelecionada.nome : 'Jogo';
+      
       const payload: CriarJogoPanelinhaPayload = {
         data: new Date(data).toISOString(),
-        local: local.trim(),
+        local: localParaSalvar,
         pointId: pointId || null,
         atleta1Id,
         atleta2Id,
@@ -1199,32 +1202,17 @@ function ModalCriarJogo({ isOpen, panelinhaId, membros, onClose, onSuccess }: Mo
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Data e Hora *
-              </label>
-              <input
-                type="datetime-local"
-                value={data}
-                onChange={(e) => setData(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                disabled={salvando}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Local *
-              </label>
-              <input
-                type="text"
-                value={local}
-                onChange={(e) => setLocal(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Ex: Quadra 1"
-                disabled={salvando}
-              />
-            </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Data e Hora *
+            </label>
+            <input
+              type="datetime-local"
+              value={data}
+              onChange={(e) => setData(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={salvando}
+            />
           </div>
 
           {/* Arena */}
