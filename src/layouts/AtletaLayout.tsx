@@ -26,6 +26,7 @@ export default function AtletaLayout({ children }: { children: React.ReactNode }
   const navItems = [
     { to: '/app/atleta/agendamentos', label: 'Agendamentos', icon: Calendar },
     { to: '/app/atleta/jogos', label: 'Meus Jogos', icon: Trophy },
+    { to: '/app/atleta/competicoes', label: 'Minhas Competições', icon: Trophy },
     { to: '/app/atleta/panelinha', label: 'Minha Panelinha', icon: PanelaIcon },
     { to: '/app/atleta/consumo', label: 'Meu Consumo', icon: ShoppingCart },
     // { to: '/app/atleta/dashboard', label: 'Dashboard', icon: LayoutDashboard }, // Oculto temporariamente
