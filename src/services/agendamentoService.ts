@@ -122,6 +122,11 @@ export const agendamentoService = {
     return res.data;
   },
 
+  solicitarCancelamento: async (id: string): Promise<{ mensagem: string; enviado: boolean }> => {
+    const res = await api.post(`/agendamento/${id}/solicitar-cancelamento`);
+    return res.data;
+  },
+
   deletar: async (id: string): Promise<void> => {
     await api.delete(`/agendamento/${id}`);
   },

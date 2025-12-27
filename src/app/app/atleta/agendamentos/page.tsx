@@ -138,12 +138,58 @@ export default function AgendamentosPage() {
     if (!agendamentoCancelando) return;
 
     try {
+      // Verificar se faltam menos de 12 horas (apenas para USER)
+      if (usuario?.role === 'USER' && !isAdmin) {
+        const dataHoraStr = agendamentoCancelando.dataHora;
+        const match = dataHoraStr.match(/T(\d{2}):(\d{2})/);
+        if (match) {
+          const hora = parseInt(match[1], 10);
+          const minuto = parseInt(match[2], 10);
+          const dataPart = dataHoraStr.split('T')[0];
+          const [ano, mes, dia] = dataPart.split('-').map(Number);
+          
+          const dataHoraAgendamento = new Date(ano, mes - 1, dia, hora, minuto);
+          const agora = new Date();
+          const diferencaMs = dataHoraAgendamento.getTime() - agora.getTime();
+          const diferencaHoras = diferencaMs / (1000 * 60 * 60);
+          
+          if (diferencaHoras < 12) {
+            // Solicitar cancelamento via WhatsApp
+            try {
+              await agendamentoService.solicitarCancelamento(agendamentoCancelando.id);
+              alert('Sua solicitação de cancelamento foi enviada para a arena. A arena entrará em contato em breve.');
+              setModalCancelarAberto(false);
+              setAgendamentoCancelando(null);
+              carregarAgendamentos();
+              return;
+            } catch (errorSolicitacao: any) {
+              alert(errorSolicitacao?.response?.data?.mensagem || 'Erro ao solicitar cancelamento');
+              return;
+            }
+          }
+        }
+      }
+      
+      // Cancelar diretamente (mais de 12 horas ou ADMIN/ORGANIZER)
       await agendamentoService.cancelar(agendamentoCancelando.id, false);
       setModalCancelarAberto(false);
       setAgendamentoCancelando(null);
       carregarAgendamentos();
     } catch (error: any) {
-      alert(error?.response?.data?.mensagem || 'Erro ao cancelar agendamento');
+      // Se o erro for MENOS_12_HORAS, tentar solicitar cancelamento
+      if (error?.response?.data?.codigo === 'MENOS_12_HORAS') {
+        try {
+          await agendamentoService.solicitarCancelamento(agendamentoCancelando.id);
+          alert('Sua solicitação de cancelamento foi enviada para a arena. A arena entrará em contato em breve.');
+          setModalCancelarAberto(false);
+          setAgendamentoCancelando(null);
+          carregarAgendamentos();
+        } catch (errorSolicitacao: any) {
+          alert(errorSolicitacao?.response?.data?.mensagem || 'Erro ao solicitar cancelamento');
+        }
+      } else {
+        alert(error?.response?.data?.mensagem || 'Erro ao cancelar agendamento');
+      }
     }
   };
 
