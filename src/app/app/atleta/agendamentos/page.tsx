@@ -156,8 +156,15 @@ export default function AgendamentosPage() {
           if (diferencaHoras < 12) {
             // Solicitar cancelamento via WhatsApp
             try {
+              // Calcular tempo restante para a mensagem
+              const horasRestantes = Math.floor(diferencaHoras);
+              const minutosRestantes = Math.floor((diferencaHoras - horasRestantes) * 60);
+              const tempoRestante = horasRestantes > 0 
+                ? `${horasRestantes}h ${minutosRestantes > 0 ? minutosRestantes + 'min' : ''}`.trim()
+                : `${minutosRestantes}min`;
+              
               await agendamentoService.solicitarCancelamento(agendamentoCancelando.id);
-              alert('Sua solicitação de cancelamento foi enviada para a arena. A arena entrará em contato em breve.');
+              alert(`Sua solicitação de cancelamento foi enviada para a arena.\n\nMotivo: Faltam menos de 12 horas para o início do agendamento (restam aproximadamente ${tempoRestante}).\n\nA arena entrará em contato em breve.`);
               setModalCancelarAberto(false);
               setAgendamentoCancelando(null);
               carregarAgendamentos();
@@ -179,8 +186,37 @@ export default function AgendamentosPage() {
       // Se o erro for MENOS_12_HORAS, tentar solicitar cancelamento
       if (error?.response?.data?.codigo === 'MENOS_12_HORAS') {
         try {
-          await agendamentoService.solicitarCancelamento(agendamentoCancelando.id);
-          alert('Sua solicitação de cancelamento foi enviada para a arena. A arena entrará em contato em breve.');
+          // Calcular tempo restante para a mensagem
+          if (agendamentoCancelando?.dataHora) {
+            const dataHoraStr = agendamentoCancelando.dataHora;
+            const match = dataHoraStr.match(/T(\d{2}):(\d{2})/);
+            if (match) {
+              const hora = parseInt(match[1], 10);
+              const minuto = parseInt(match[2], 10);
+              const dataPart = dataHoraStr.split('T')[0];
+              const [ano, mes, dia] = dataPart.split('-').map(Number);
+              
+              const dataHoraAgendamento = new Date(ano, mes - 1, dia, hora, minuto);
+              const agora = new Date();
+              const diferencaMs = dataHoraAgendamento.getTime() - agora.getTime();
+              const diferencaHoras = diferencaMs / (1000 * 60 * 60);
+              
+              const horasRestantes = Math.floor(diferencaHoras);
+              const minutosRestantes = Math.floor((diferencaHoras - horasRestantes) * 60);
+              const tempoRestante = horasRestantes > 0 
+                ? `${horasRestantes}h ${minutosRestantes > 0 ? minutosRestantes + 'min' : ''}`.trim()
+                : `${minutosRestantes}min`;
+              
+              await agendamentoService.solicitarCancelamento(agendamentoCancelando.id);
+              alert(`Sua solicitação de cancelamento foi enviada para a arena.\n\nMotivo: Faltam menos de 12 horas para o início do agendamento (restam aproximadamente ${tempoRestante}).\n\nA arena entrará em contato em breve.`);
+            } else {
+              await agendamentoService.solicitarCancelamento(agendamentoCancelando.id);
+              alert('Sua solicitação de cancelamento foi enviada para a arena.\n\nMotivo: Faltam menos de 12 horas para o início do agendamento.\n\nA arena entrará em contato em breve.');
+            }
+          } else {
+            await agendamentoService.solicitarCancelamento(agendamentoCancelando.id);
+            alert('Sua solicitação de cancelamento foi enviada para a arena.\n\nMotivo: Faltam menos de 12 horas para o início do agendamento.\n\nA arena entrará em contato em breve.');
+          }
           setModalCancelarAberto(false);
           setAgendamentoCancelando(null);
           carregarAgendamentos();
