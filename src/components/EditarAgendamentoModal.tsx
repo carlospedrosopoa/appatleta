@@ -8,7 +8,7 @@ import { quadraService, agendamentoService, bloqueioAgendaService, tabelaPrecoSe
 import { userArenaService, userAtletaService, type Arena } from '@/services/userAtletaService';
 import { api } from '@/lib/api';
 import type { Agendamento, ModoAgendamento } from '@/types/agendamento';
-import { Calendar, Clock, MapPin, AlertCircle, User, Users, UserPlus, X } from 'lucide-react';
+import { Calendar, Clock, MapPin, AlertCircle, User, Users, UserPlus, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { calcularDistancia, formatarDistancia, obterLocalizacaoAtual } from '@/lib/geolocationUtils';
 
 interface Atleta {
@@ -65,6 +65,7 @@ export default function EditarAgendamentoModal({
   }>>([]);
   const [carregandoDisponibilidade, setCarregandoDisponibilidade] = useState(false);
   const [arenaExpandida, setArenaExpandida] = useState<string | null>(null);
+  const [quadroArenasColapsado, setQuadroArenasColapsado] = useState(false);
   const [localizacaoAtual, setLocalizacaoAtual] = useState<{ latitude: number; longitude: number } | null>(null);
   const [meuPerfilAtleta, setMeuPerfilAtleta] = useState<any>(null);
 
@@ -155,6 +156,9 @@ export default function EditarAgendamentoModal({
       } else {
         // Modo criação - resetar formulário
         resetarFormulario();
+        // Resetar estado de colapso do quadro de arenas
+        setQuadroArenasColapsado(false);
+        setArenaExpandida(null);
         // Se houver quadraIdInicial, pré-selecionar após carregar dados
         if (quadraIdInicial) {
           // Aguardar um pouco para os dados carregarem
@@ -446,6 +450,8 @@ export default function EditarAgendamentoModal({
     setAgendamentosExistentes([]);
     setErro('');
     setAtletasParticipantes([]);
+    setQuadroArenasColapsado(false);
+    setArenaExpandida(null);
   };
 
   const selecionarQuadraInicial = async (quadraIdParaSelecionar: string) => {
@@ -905,6 +911,10 @@ export default function EditarAgendamentoModal({
     setPointId(pointIdSelecionado);
     setQuadraId(quadraIdSelecionada);
     
+    // Colapsar o quadro de arenas e quadras após seleção
+    setQuadroArenasColapsado(true);
+    setArenaExpandida(null);
+    
     // Carregar quadras para garantir que está na lista
     await carregarQuadras(pointIdSelecionado);
     
@@ -1357,10 +1367,31 @@ export default function EditarAgendamentoModal({
             {/* Cards de Arenas com Quadras Disponíveis (apenas para novo agendamento com data/hora/duração) */}
             {!agendamento && data && hora && duracao ? (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  <MapPin className="inline w-4 h-4 mr-1" />
-                  Arenas e Quadras Disponíveis
-                </label>
+                <div className="flex items-center justify-between mb-3">
+                  <label className="block text-sm font-medium text-gray-700">
+                    <MapPin className="inline w-4 h-4 mr-1" />
+                    Arenas e Quadras Disponíveis
+                  </label>
+                  {quadraId && (
+                    <button
+                      type="button"
+                      onClick={() => setQuadroArenasColapsado(!quadroArenasColapsado)}
+                      className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium"
+                    >
+                      {quadroArenasColapsado ? (
+                        <>
+                          <ChevronDown className="w-4 h-4" />
+                          Mostrar
+                        </>
+                      ) : (
+                        <>
+                          <ChevronUp className="w-4 h-4" />
+                          Ocultar
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
                 {carregandoDisponibilidade ? (
                   <div className="text-center py-8 text-gray-600">
                     Verificando disponibilidade...
@@ -1370,7 +1401,9 @@ export default function EditarAgendamentoModal({
                     Nenhuma quadra disponível para o horário selecionado.
                   </div>
                 ) : (
-                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                  <div className={`space-y-3 overflow-y-auto transition-all duration-300 ${
+                    quadroArenasColapsado ? 'max-h-0 overflow-hidden' : 'max-h-96'
+                  }`}>
                     {disponibilidade
                       .map((item) => {
                         // Calcular distância se tiver localização atual e coordenadas da arena
