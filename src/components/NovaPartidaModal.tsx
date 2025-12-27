@@ -176,6 +176,12 @@ export default function NovaPartidaModal({
       return;
     }
 
+    if (!pointId) {
+      setErro('Selecione uma arena');
+      setSalvando(false);
+      return;
+    }
+
     // Valida data e hora (já devem estar preenchidos com valores padrão)
     const dataFinal = data || dataPadrao;
     const horaFinal = hora || horaPadrao;
@@ -185,8 +191,6 @@ export default function NovaPartidaModal({
       setSalvando(false);
       return;
     }
-
-    // Local não é mais obrigatório, vamos usar o nome da arena selecionada ou um valor padrão
 
     // Verificar se não há atletas duplicados
     const atletasSelecionados = [atleta1Id, atleta2Id, atleta3Id, atleta4Id].filter(Boolean);
@@ -286,15 +290,16 @@ export default function NovaPartidaModal({
           {/* Arena */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Arena (opcional)
+              Arena <span className="text-red-500">*</span>
             </label>
             <select
               value={pointId}
               onChange={(e) => setPointId(e.target.value)}
               disabled={carregandoArenas}
+              required
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white"
             >
-              <option value="">Selecione uma arena (opcional)</option>
+              <option value="">Selecione uma arena</option>
               {arenas.map((arena) => (
                 <option key={arena.id} value={arena.id}>
                   {arena.nome}
@@ -305,7 +310,7 @@ export default function NovaPartidaModal({
               <p className="text-xs text-gray-500 mt-1">Carregando arenas...</p>
             )}
             <p className="text-xs text-gray-500 mt-1">
-              Selecionar a arena permite usar o template de card personalizado dela.
+              A arena é obrigatória para criar uma partida de treino.
             </p>
           </div>
 
