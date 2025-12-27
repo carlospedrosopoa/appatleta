@@ -7,6 +7,7 @@ import { atletaService } from '@/services/atletaService';
 import { partidaService } from '@/services/partidaService';
 import { userArenaService, type Arena } from '@/services/userAtletaService';
 import type { Atleta } from '@/types/domain';
+import { Users, User, X, Search } from 'lucide-react';
 
 interface NovaPartidaModalProps {
   isOpen: boolean;
@@ -338,7 +339,7 @@ export default function NovaPartidaModal({
             )}
           </div>
 
-          {/* Seleção de Atletas */}
+          {/* Seleção de Atletas - Interface Melhorada */}
           <div className="space-y-4">
             {carregandoAtletas ? (
               <div className="text-center py-4">
@@ -356,110 +357,189 @@ export default function NovaPartidaModal({
               </div>
             ) : (
               <>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Atleta 1 (Time 1) <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    value={atleta1Id}
-                    onChange={(e) => setAtleta1Id(e.target.value)}
-                    required
-                    disabled={atletasFiltrados.length === 0}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  >
-                    <option value="">Selecione um atleta</option>
-                    {atletasFiltrados.map((atleta) => (
-                      <option 
-                        key={atleta.id} 
-                        value={atleta.id}
-                        disabled={atleta.id === atleta2Id || atleta.id === atleta3Id || atleta.id === atleta4Id}
-                      >
-                        {atleta.nome}
-                        {atleta.idade ? ` (${atleta.idade} anos)` : ''}
-                        {atleta.categoria ? ` - ${atleta.categoria}` : ''}
-                        {atleta.id === atleta2Id || atleta.id === atleta3Id || atleta.id === atleta4Id ? ' (já selecionado)' : ''}
-                      </option>
-                    ))}
-                  </select>
+                {/* Times Selecionados */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                  {/* Time 1 */}
+                  <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Users className="w-5 h-5 text-blue-600" />
+                      <h4 className="font-semibold text-blue-900">Time 1</h4>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between bg-white rounded-lg p-2 border border-blue-200">
+                        <span className="text-sm font-medium text-gray-700">Atleta 1 <span className="text-red-500">*</span></span>
+                        {atleta1Id ? (
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-gray-900">{getAtletaNome(atleta1Id)}</span>
+                            <button
+                              type="button"
+                              onClick={() => setAtleta1Id('')}
+                              className="text-red-500 hover:text-red-700"
+                              aria-label="Remover atleta"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-sm text-gray-400">Não selecionado</span>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between bg-white rounded-lg p-2 border border-blue-200">
+                        <span className="text-sm font-medium text-gray-700">Atleta 2 <span className="text-red-500">*</span></span>
+                        {atleta2Id ? (
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-gray-900">{getAtletaNome(atleta2Id)}</span>
+                            <button
+                              type="button"
+                              onClick={() => setAtleta2Id('')}
+                              className="text-red-500 hover:text-red-700"
+                              aria-label="Remover atleta"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-sm text-gray-400">Não selecionado</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Time 2 */}
+                  <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Users className="w-5 h-5 text-green-600" />
+                      <h4 className="font-semibold text-green-900">Time 2</h4>
+                      <span className="text-xs text-gray-500">(opcional)</span>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between bg-white rounded-lg p-2 border border-green-200">
+                        <span className="text-sm font-medium text-gray-700">Atleta 3</span>
+                        {atleta3Id ? (
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-gray-900">{getAtletaNome(atleta3Id)}</span>
+                            <button
+                              type="button"
+                              onClick={() => setAtleta3Id('')}
+                              className="text-red-500 hover:text-red-700"
+                              aria-label="Remover atleta"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-sm text-gray-400">Não selecionado</span>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between bg-white rounded-lg p-2 border border-green-200">
+                        <span className="text-sm font-medium text-gray-700">Atleta 4</span>
+                        {atleta4Id ? (
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-gray-900">{getAtletaNome(atleta4Id)}</span>
+                            <button
+                              type="button"
+                              onClick={() => setAtleta4Id('')}
+                              className="text-red-500 hover:text-red-700"
+                              aria-label="Remover atleta"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-sm text-gray-400">Não selecionado</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
+                {/* Lista de Atletas para Seleção */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Atleta 2 (Time 1) <span className="text-red-500">*</span>
+                  <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                    <Search className="w-4 h-4 text-gray-400" />
+                    Selecione os atletas ({atletasFiltrados.length} disponível{atletasFiltrados.length !== 1 ? 'eis' : ''})
                   </label>
-                  <select
-                    value={atleta2Id}
-                    onChange={(e) => setAtleta2Id(e.target.value)}
-                    required
-                    disabled={atletasFiltrados.length === 0}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  >
-                    <option value="">Selecione um atleta</option>
-                    {atletasFiltrados.map((atleta) => (
-                      <option 
-                        key={atleta.id} 
-                        value={atleta.id}
-                        disabled={atleta.id === atleta1Id || atleta.id === atleta3Id || atleta.id === atleta4Id}
-                      >
-                        {atleta.nome}
-                        {atleta.idade ? ` (${atleta.idade} anos)` : ''}
-                        {atleta.categoria ? ` - ${atleta.categoria}` : ''}
-                        {atleta.id === atleta1Id || atleta.id === atleta3Id || atleta.id === atleta4Id ? ' (já selecionado)' : ''}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                  <div className="border border-gray-300 rounded-lg p-3 max-h-64 overflow-y-auto bg-gray-50">
+                    {atletasFiltrados.length === 0 ? (
+                      <p className="text-sm text-gray-500 text-center py-4">
+                        {buscaAtleta ? 'Nenhum atleta encontrado' : 'Nenhum atleta disponível'}
+                      </p>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {atletasFiltrados.map((atleta) => {
+                          const jaSelecionado = atleta.id === atleta1Id || atleta.id === atleta2Id || 
+                                               atleta.id === atleta3Id || atleta.id === atleta4Id;
+                          
+                          // Determinar qual posição está vazia (prioriza Time 1)
+                          const getPosicaoVazia = () => {
+                            if (!atleta1Id) return 1;
+                            if (!atleta2Id) return 2;
+                            if (!atleta3Id) return 3;
+                            if (!atleta4Id) return 4;
+                            return null;
+                          };
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Atleta 3 (Time 2) <span className="text-gray-500 text-xs">(opcional)</span>
-                  </label>
-                  <select
-                    value={atleta3Id}
-                    onChange={(e) => setAtleta3Id(e.target.value)}
-                    disabled={atletasFiltrados.length === 0}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  >
-                    <option value="">Nenhum (jogo de duplas)</option>
-                    {atletasFiltrados.map((atleta) => (
-                      <option 
-                        key={atleta.id} 
-                        value={atleta.id}
-                        disabled={atleta.id === atleta1Id || atleta.id === atleta2Id || atleta.id === atleta4Id}
-                      >
-                        {atleta.nome}
-                        {atleta.idade ? ` (${atleta.idade} anos)` : ''}
-                        {atleta.categoria ? ` - ${atleta.categoria}` : ''}
-                        {atleta.id === atleta1Id || atleta.id === atleta2Id || atleta.id === atleta4Id ? ' (já selecionado)' : ''}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                          const handleClick = () => {
+                            if (jaSelecionado) {
+                              // Se já está selecionado, remover da posição atual
+                              if (atleta.id === atleta1Id) setAtleta1Id('');
+                              else if (atleta.id === atleta2Id) setAtleta2Id('');
+                              else if (atleta.id === atleta3Id) setAtleta3Id('');
+                              else if (atleta.id === atleta4Id) setAtleta4Id('');
+                              return;
+                            }
+                            
+                            const posicao = getPosicaoVazia();
+                            if (posicao === 1) setAtleta1Id(atleta.id);
+                            else if (posicao === 2) setAtleta2Id(atleta.id);
+                            else if (posicao === 3) setAtleta3Id(atleta.id);
+                            else if (posicao === 4) setAtleta4Id(atleta.id);
+                          };
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Atleta 4 (Time 2) <span className="text-gray-500 text-xs">(opcional)</span>
-                  </label>
-                  <select
-                    value={atleta4Id}
-                    onChange={(e) => setAtleta4Id(e.target.value)}
-                    disabled={atletasFiltrados.length === 0}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  >
-                    <option value="">Nenhum (jogo de duplas)</option>
-                    {atletasFiltrados.map((atleta) => (
-                      <option 
-                        key={atleta.id} 
-                        value={atleta.id}
-                        disabled={atleta.id === atleta1Id || atleta.id === atleta2Id || atleta.id === atleta3Id}
-                      >
-                        {atleta.nome}
-                        {atleta.idade ? ` (${atleta.idade} anos)` : ''}
-                        {atleta.categoria ? ` - ${atleta.categoria}` : ''}
-                        {atleta.id === atleta1Id || atleta.id === atleta2Id || atleta.id === atleta3Id ? ' (já selecionado)' : ''}
-                      </option>
-                    ))}
-                  </select>
+                          return (
+                            <button
+                              key={atleta.id}
+                              type="button"
+                              onClick={handleClick}
+                              disabled={jaSelecionado}
+                              className={`
+                                p-3 rounded-lg border-2 transition-all text-left
+                                ${jaSelecionado 
+                                  ? 'bg-green-100 border-green-400 hover:border-green-500 cursor-pointer' 
+                                  : 'bg-white border-gray-300 hover:border-blue-400 hover:bg-blue-50 cursor-pointer active:scale-95'
+                                }
+                              `}
+                            >
+                              <div className="flex items-center gap-2">
+                                <User className={`w-4 h-4 ${jaSelecionado ? 'text-green-600' : 'text-gray-400'}`} />
+                                <div className="flex-1 min-w-0">
+                                  <p className={`text-sm font-medium truncate ${jaSelecionado ? 'text-green-800' : 'text-gray-900'}`}>
+                                    {atleta.nome}
+                                  </p>
+                                  <div className="flex items-center gap-2 mt-0.5">
+                                    {atleta.idade && (
+                                      <span className="text-xs text-gray-500">{atleta.idade} anos</span>
+                                    )}
+                                    {atleta.categoria && (
+                                      <span className="text-xs bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded">
+                                        {atleta.categoria}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                {jaSelecionado && (
+                                  <span className="text-xs font-semibold text-green-700">✓</span>
+                                )}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Clique nos atletas para selecioná-los. Os dois primeiros são obrigatórios.
+                  </p>
                 </div>
               </>
             )}
