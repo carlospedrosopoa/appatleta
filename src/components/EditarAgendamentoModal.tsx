@@ -1578,14 +1578,36 @@ export default function EditarAgendamentoModal({
                     })}
                   </div>
                 )}
-                {quadraId && (
-                  <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                    <p className="text-sm text-blue-800">
-                      <strong>Quadra selecionada:</strong>{' '}
-                      {quadras.find((q) => q.id === quadraId)?.nome || 'Carregando...'}
-                    </p>
-                  </div>
-                )}
+                {quadraId && (() => {
+                  const quadraSelecionada = quadras.find((q) => q.id === quadraId);
+                  // Buscar arena pelo pointId da quadra ou pelo pointId do estado
+                  const pointIdParaBuscar = quadraSelecionada?.pointId || pointId;
+                  const arenaSelecionada = points.find((p) => p.id === pointIdParaBuscar);
+                  return (
+                    <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <div className="flex items-center gap-3">
+                        {arenaSelecionada?.logoUrl && (
+                          <img
+                            src={arenaSelecionada.logoUrl}
+                            alt={arenaSelecionada.nome}
+                            className="w-10 h-10 rounded-lg object-contain flex-shrink-0 border border-blue-200"
+                          />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-blue-800">
+                            <strong>Quadra selecionada:</strong>{' '}
+                            {quadraSelecionada?.nome || 'Carregando...'}
+                          </p>
+                          {arenaSelecionada && (
+                            <p className="text-xs text-blue-600 mt-0.5">
+                              {arenaSelecionada.nome}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             ) : (
               /* Seleção tradicional (para edição ou quando não há data/hora/duração) */
