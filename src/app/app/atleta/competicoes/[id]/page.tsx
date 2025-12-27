@@ -357,3 +357,4 @@ export default function DetalhesCompeticaoPage({ params }: { params: Promise<{ i
   );
 }
 
+
