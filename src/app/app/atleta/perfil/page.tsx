@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { userArenaService, userAtletaService, type Arena } from '@/services/userAtletaService';
+import DateInput from '@/components/DateInput';
 
 interface ModalEditarFotoProps {
   isOpen: boolean;
@@ -525,15 +526,16 @@ function ModalEditarAtleta({ isOpen, atleta, onClose, onSuccess }: ModalEditarAt
 
           <div>
             <label className="block font-semibold mb-1">Data de Nascimento</label>
-            <input
-              type="date"
+            <DateInput
               name="dataNascimento"
               value={form.dataNascimento}
               onChange={handleChange}
               className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
               required
               disabled={salvando}
+              placeholder="DD/MM/AAAA"
             />
+            <p className="text-xs text-gray-500 mt-1">Digite a data ou clique no ícone do calendário</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

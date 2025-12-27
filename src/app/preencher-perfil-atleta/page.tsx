@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { userArenaService, userAtletaService, type Arena } from '@/services/userAtletaService';
+import DateInput from '@/components/DateInput';
 
 interface AtletaForm {
   nome: string;
@@ -220,14 +221,15 @@ export default function PreencherPerfilAtletaPage() {
 
         <div>
           <label className="block font-semibold mb-1">Data de Nascimento</label>
-          <input
-            type="date"
+          <DateInput
             name="dataNascimento"
             value={form.dataNascimento}
             onChange={handleChange}
             className="w-full p-2 border rounded"
             required
+            placeholder="DD/MM/AAAA"
           />
+          <p className="text-xs text-gray-500 mt-1">Digite a data ou clique no ícone do calendário</p>
         </div>
 
         <div>
