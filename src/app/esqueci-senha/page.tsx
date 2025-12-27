@@ -10,6 +10,8 @@ export default function EsqueciSenhaPage() {
   const [erro, setErro] = useState('');
   const [sucesso, setSucesso] = useState(false);
   const [carregando, setCarregando] = useState(false);
+  const [mensagemSucesso, setMensagemSucesso] = useState('');
+  const [enviadoViaWhatsApp, setEnviadoViaWhatsApp] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -23,6 +25,8 @@ export default function EsqueciSenhaPage() {
 
       if (status === 200) {
         setSucesso(true);
+        setMensagemSucesso(data.mensagem || 'Solicitação processada com sucesso!');
+        setEnviadoViaWhatsApp(data.enviadoViaWhatsApp || false);
         // Em desenvolvimento, mostrar o link se vier na resposta
         if (data.resetUrl) {
           console.log('Link de reset:', data.resetUrl);
@@ -60,12 +64,29 @@ export default function EsqueciSenhaPage() {
 
           {sucesso ? (
             <div className="space-y-6">
-              <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm">
-                <p className="font-semibold mb-1">Email enviado!</p>
-                <p>
-                  Se o email estiver cadastrado, você receberá um link para redefinir sua senha.
-                  Verifique sua caixa de entrada e spam.
-                </p>
+              <div className={`${enviadoViaWhatsApp ? 'bg-green-50 border-green-200 text-green-700' : 'bg-blue-50 border-blue-200 text-blue-700'} border px-4 py-3 rounded-lg text-sm`}>
+                <div className="flex items-start gap-3">
+                  {enviadoViaWhatsApp ? (
+                    <svg className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  )}
+                  <div>
+                    <p className="font-semibold mb-1">
+                      {enviadoViaWhatsApp ? 'Link enviado via WhatsApp!' : 'Solicitação processada!'}
+                    </p>
+                    <p>{mensagemSucesso}</p>
+                    {enviadoViaWhatsApp && (
+                      <p className="mt-2 text-xs">
+                        Verifique suas mensagens do WhatsApp para acessar o link de recuperação.
+                      </p>
+                    )}
+                  </div>
+                </div>
               </div>
               <button
                 onClick={() => router.push('/login')}
