@@ -309,36 +309,6 @@ export default function NovaPartidaModal({
             </p>
           </div>
 
-          {/* Busca de Atletas */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Buscar Atleta {atletas.length > 0 && `(${atletasFiltrados.length} de ${atletas.length})`}
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                value={buscaAtleta}
-                onChange={(e) => setBuscaAtleta(e.target.value)}
-                placeholder="Digite o nome do atleta para buscar..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                disabled={carregandoAtletas || atletas.length === 0}
-              />
-              {buscaAtleta && (
-                <button
-                  type="button"
-                  onClick={() => setBuscaAtleta('')}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  aria-label="Limpar busca"
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-            {atletas.length > 0 && atletasFiltrados.length === 0 && buscaAtleta && (
-              <p className="text-sm text-gray-500 mt-1">Nenhum atleta encontrado com "{buscaAtleta}"</p>
-            )}
-          </div>
-
           {/* Seleção de Atletas - Interface Melhorada */}
           <div className="space-y-4">
             {carregandoAtletas ? (
@@ -459,6 +429,33 @@ export default function NovaPartidaModal({
                     <Search className="w-4 h-4 text-gray-400" />
                     Selecione os atletas ({atletasFiltrados.length} disponível{atletasFiltrados.length !== 1 ? 'eis' : ''})
                   </label>
+                  
+                  {/* Campo de Busca */}
+                  <div className="relative mb-3">
+                    <input
+                      type="text"
+                      value={buscaAtleta}
+                      onChange={(e) => setBuscaAtleta(e.target.value)}
+                      placeholder="Digite o nome do atleta para buscar..."
+                      className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                      disabled={carregandoAtletas || atletas.length === 0}
+                    />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    {buscaAtleta && (
+                      <button
+                        type="button"
+                        onClick={() => setBuscaAtleta('')}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        aria-label="Limpar busca"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                  {atletas.length > 0 && atletasFiltrados.length === 0 && buscaAtleta && (
+                    <p className="text-sm text-gray-500 mb-3">Nenhum atleta encontrado com "{buscaAtleta}"</p>
+                  )}
+                  
                   <div className="border border-gray-300 rounded-lg p-3 max-h-64 overflow-y-auto bg-gray-50">
                     {atletasFiltrados.length === 0 ? (
                       <p className="text-sm text-gray-500 text-center py-4">
